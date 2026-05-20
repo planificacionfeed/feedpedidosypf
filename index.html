@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FEED — Pedido Semanal YPF</title>
+  <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink:      #1D1D1B;
+      --ink-soft: #4A4845;
+      --cream:    #F7F4EE;
+      --cream-dk: #EDEAE2;
+      --white:    #FFFFFF;
+      --line:     #D8D4CB;
+      --accent2:  #7C6F5B;
+      --ok:       #2E6B4A;
+      --ok-bg:    #EAF4EE;
+      --ok-br:    #9ECDB5;
+      --warn-bg:  #FDF6E3;
+      --warn-br:  #C8A84B;
+      --err:      #B03A2E;
+      --radius:   10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--white);
+      border-bottom: 1.5px solid var(--line);
+      padding: 0 40px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .header-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--ink);
+      color: var(--white);
+      padding: 52px 40px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; max-width: 860px; margin: 0 auto; }
+    .hero-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-family: 'Suez One', serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.05;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      font-size: 0.93rem;
+      color: rgba(255,255,255,0.58);
+      max-width: 400px;
+      line-height: 1.65;
+    }
+    .week-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 4px;
+      padding: 7px 16px;
+      font-size: 0.81rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.82);
+    }
+    .week-pill::before {
+      content: '';
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: #C8A84B;
+      border-radius: 50%;
+    }
+
+    /* ── MAIN CONTAINER ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 36px 20px 100px;
+      flex: 1;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--white);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      margin-bottom: 24px;
+    }
+    .card-label {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 6px;
+    }
+    .card h2 {
+      font-family: 'Suez One', serif;
+      font-size: 1.4rem;
+      color: var(--ink);
+      margin-bottom: 22px;
+      line-height: 1.2;
+    }
+
+    /* ── SEDE SELECTOR ── */
+    .sede-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* Estado normal — clickeable */
+    .sede-card {
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      cursor: pointer;
+      transition: border-color .18s, background .18s;
+      background: var(--cream);
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .sede-card:hover { border-color: var(--accent2); background: var(--cream-dk); }
+
+    /* Estado: pedido ya realizado */
+    .sede-card.done {
+      border-color: var(--ok-br);
+      background: var(--ok-bg);
+      cursor: default;
+      pointer-events: none;
+    }
+    .sede-card.done:hover { border-color: var(--ok-br); background: var(--ok-bg); }
+
+    .sede-card .sede-name {
+      font-family: 'Suez One', serif;
+      font-size: 1.15rem;
+      margin-bottom: 5px;
+    }
+    .sede-card .sede-days {
+      font-size: 0.77rem;
+      color: var(--ink-soft);
+    }
+
+    /* Chip "Pedido realizado" */
+    .done-chip {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      background: var(--ok);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 4px;
+      width: fit-content;
+    }
+    .sede-card.done .done-chip { display: flex; }
+
+    /* Checkmark grande en esquina */
+    .sede-check {
+      position: absolute;
+      top: 16px; right: 16px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid var(--line);
+      background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      color: transparent;
+      transition: all .2s;
+    }
+    .sede-card.done .sede-check {
+      background: var(--ok);
+      border-color: var(--ok);
+      color: white;
+    }
+
+    /* Flecha "Cargar pedido" */
+    .sede-cta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      transition: gap .15s;
+    }
+    .sede-card:hover .sede-cta { gap: 10px; }
+    .sede-card.done .sede-cta { display: none; }
+
+    /* ── ORDER SECTION ── */
+    #order-section { display: none; }
+
+    .order-sede-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .order-sede-label span {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+    }
+
+    /* ── DEADLINE STRIP ── */
+    .deadline-strip {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-br);
+      border-radius: 8px;
+      padding: 11px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.83rem;
+      color: #6B4E00;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .deadline-strip .di { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── DAY TABS ── */
+    .day-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      border-bottom: 1.5px solid var(--line);
+      margin-bottom: 22px;
+    }
+    .day-tab {
+      padding: 9px 18px 12px;
+      border: none;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      font-size: 0.83rem;
+      font-weight: 700;
+      font-family: 'Lato', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+      color: var(--ink-soft);
+      margin-bottom: -1.5px;
+      white-space: nowrap;
+    }
+    .day-tab:hover { color: var(--ink); }
+    .day-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+    .day-tab .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--warn-br);
+      border-radius: 50%;
+      margin-left: 5px;
+      vertical-align: middle;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .day-tab .dot.visible { opacity: 1; }
+
+    /* ── DAY PANELS ── */
+    .day-panel { display: none; }
+    .day-panel.active { display: block; }
+    .day-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .day-header h3 { font-family: 'Suez One', serif; font-size: 1.2rem; }
+    .day-header .date-str { font-size: 0.8rem; color: var(--ink-soft); }
+
+    /* ── PRODUCT TABLE ── */
+    table.ptable { width: 100%; border-collapse: collapse; }
+    table.ptable thead tr { border-bottom: 2px solid var(--ink); }
+    table.ptable th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+    table.ptable th:last-child { text-align: center; }
+    table.ptable td {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--cream-dk);
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    table.ptable tr:last-child td { border-bottom: none; }
+    table.ptable tr:hover td { background: var(--cream); }
+    table.ptable td.code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+    }
+    table.ptable td:last-child { text-align: center; }
+
+    /* ── QTY CONTROL ── */
+    .qty-wrap {
+      display: inline-flex;
+      align-items: center;
+      border: 1.5px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--white);
+    }
+    .qty-btn {
+      width: 34px; height: 34px;
+      border: none;
+      background: var(--cream);
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .12s;
+    }
+    .qty-btn:hover { background: var(--cream-dk); }
+    .qty-input {
+      width: 48px; height: 34px;
+      text-align: center;
+      border: none;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      font-size: 0.92rem;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      background: var(--white);
+      color: var(--ink);
+      -moz-appearance: textfield;
+    }
+    .qty-input::-webkit-inner-spin-button,
+    .qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .qty-input:focus { outline: none; background: #FFFEF8; }
+
+    /* ── RESUMEN ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+    .s-day {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 15px;
+    }
+    .s-day-name {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 7px;
+    }
+    .s-item { font-size: 0.79rem; color: var(--ink-soft); margin-bottom: 2px; line-height: 1.4; }
+    .s-empty { font-size: 0.77rem; color: var(--line); font-style: italic; }
+
+    /* ── DIVIDER ── */
+    .divider { height: 1px; background: var(--cream-dk); margin: 22px 0; }
+
+    /* ── SUBMIT AREA ── */
+    .submit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .submit-note { font-size: 0.8rem; color: var(--ink-soft); max-width: 360px; line-height: 1.5; }
+
+    .btn-confirm {
+      background: var(--ink);
+      color: var(--white);
+      border: 2px solid var(--ink);
+      padding: 14px 44px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: 'Lato', sans-serif;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .18s, color .18s, transform .15s;
+      white-space: nowrap;
+    }
+    .btn-confirm:hover { background: var(--white); color: var(--ink); transform: translateY(-1px); }
+    .btn-confirm:disabled {
+      background: var(--line); border-color: var(--line);
+      color: var(--white); cursor: not-allowed; transform: none;
+    }
+
+    /* ── ERROR / SUCCESS ── */
+    .err-strip {
+      background: #FDECEA;
+      border: 1px solid #E8998F;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 0.83rem;
+      color: var(--err);
+      margin-top: 14px;
+      display: none;
+      line-height: 1.5;
+    }
+
+    /* Pantalla éxito por sede */
+    #success-screen {
+      display: none;
+      max-width: 520px;
+      margin: 72px auto;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .success-icon {
+      width: 68px; height: 68px;
+      background: var(--ok);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 26px;
+      font-size: 1.8rem;
+      color: white;
+    }
+    #success-screen h2 {
+      font-family: 'Suez One', serif;
+      font-size: 1.9rem;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    #success-screen .success-sede {
+      display: inline-block;
+      background: var(--ink);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    #success-screen p {
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+      line-height: 1.65;
+      margin-bottom: 30px;
+      max-width: 380px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn-back {
+      display: inline-block;
+      padding: 13px 36px;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: transparent;
+      font-family: 'Lato', sans-serif;
+      transition: all .18s;
+    }
+    .btn-back:hover { background: var(--ink); color: var(--white); }
+
+    /* ── SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1.5px solid var(--line);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      background: var(--white);
+    }
+    footer a { color: var(--ink-soft); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+
+    /* ── DEADLINE PASSED BANNER ── */
+    .deadline-passed-banner {
+      background: #FEF3E2;
+      border: 1.5px solid #D4900A;
+      border-radius: var(--radius);
+      padding: 16px 22px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      color: #7A4F00;
+      line-height: 1.55;
+    }
+    .deadline-passed-banner strong { color: #5C3900; }
+    .dpb-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── FADE ── */
+    .fade-in { animation: fadeUp .3s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      header { padding: 0 18px; }
+      .hero { padding: 38px 18px 30px; }
+      .card { padding: 22px 18px; }
+      .sede-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .submit-row { flex-direction: column; align-items: stretch; }
+      .btn-confirm { width: 100%; text-align: center; }
+      footer { padding: 16px 18px; flex-direction: column; gap: 6px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <svg width="110" height="40" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+    <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
+    <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
+    <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
+  </svg>
+  <div class="header-tag">Portal de pedidos · YPF</div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">YPF × FEED — Pedido semanal</div>
+    <h1>Hacé tu pedido<br>para la próxima semana</h1>
+    <p>Seleccioná una sede, completá el pedido por día y confirmalo. Podés hacerlo por separado para cada sede.</p>
+    <div class="week-pill" id="week-range">Cargando semana…</div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div class="container" id="app-container">
+
+  <!-- SELECTOR DE SEDE -->
+  <div class="card fade-in" id="step-sede">
+    <div class="card-label">Seleccioná una sede</div>
+    <h2>¿Para qué sede es el pedido?</h2>
+    <div class="sede-grid">
+
+      <div class="sede-card" id="card-nordelta" onclick="startOrder('nordelta')">
+        <div class="sede-check" id="check-nordelta">✓</div>
+        <div class="sede-name">YPF Nordelta</div>
+        <div class="sede-days">Entregas: Lun · Mié · Vie · Dom</div>
+        <div class="done-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta">Cargar pedido <span>→</span></div>
+      </div>
+
+      <div class="sede-card" id="card-madero" onclick="startOrder('madero')">
+        <div class="sede-check" id="check-madero">✓</div>
+        <div class="sede-name">YPF Madero</div>
+        <div class="sede-days">Entregas: Lun · Mar · Mié · Jue · Vie</div>
+        <div class="done-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta">Cargar pedido <span>→</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FORMULARIO DE PEDIDO -->
+  <div id="order-section" style="display:none">
+
+    <div class="card fade-in">
+      <div class="order-sede-label">
+        <span class="card-label" style="margin-bottom:0">Pedido —</span>
+        <span id="order-sede-title" style="font-family:'Suez One',serif; font-size:1.05rem;"></span>
+      </div>
+      <div style="height:18px"></div>
+
+      <div class="deadline-strip">
+        <span class="di">⏰</span>
+        <span>Recordá confirmar antes del <strong>lunes a las 15:00&nbsp;hs</strong>. Pasado ese horario no se aceptan modificaciones.</span>
+      </div>
+
+      <div class="day-tabs" id="day-tabs"></div>
+      <div id="day-panels"></div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-label">Resumen</div>
+      <h2 id="summary-title" style="margin-bottom:18px">—</h2>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="divider"></div>
+      <div class="submit-row">
+        <p class="submit-note">Al confirmar, el pedido queda registrado y el equipo de planificación recibe una notificación.</p>
+        <button class="btn-confirm" id="btn-submit" onclick="submitOrder()">Confirmar pedido</button>
+      </div>
+      <div class="err-strip" id="error-msg"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- PANTALLA ÉXITO -->
+<div id="success-screen">
+  <div class="success-icon">✓</div>
+  <h2>¡Pedido confirmado!</h2>
+  <div class="success-sede" id="success-sede-label">—</div>
+  <p>El pedido fue registrado correctamente. Nuestro equipo ya recibió la notificación y lo está procesando.</p>
+  <button class="btn-back" onclick="backToHome()">Volver al inicio</button>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>© FEED — Happiness is Homemade</span>
+  <span>Consultas: <a href="mailto:planificacion@somosfeed.com.ar">planificacion@somosfeed.com.ar</a></span>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════
+// CONFIGURACIÓN
+// ════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'TU_APPS_SCRIPT_URL_AQUI';
+
+const PRODUCTS = [
+  { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
+  { code: 'PFEN00005', name: 'Ensalada Tuna' },
+  { code: 'PFPW00239', name: 'Chicken pesto bowl YPF' },
+  { code: 'PFPW00238', name: 'Cob bowl YPF' },
+];
+
+const SEDE_DAYS = {
+  nordelta: [1, 3, 5, 0],   // lun, mié, vie, dom
+  madero:   [1, 2, 3, 4, 5], // lun a vie
+};
+
+const SEDE_LABELS = {
+  nordelta: 'YPF Nordelta',
+  madero:   'YPF Madero',
+};
+
+const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+// ════════════════════════════════════════════════
+// ESTADO
+// ════════════════════════════════════════════════
+let currentSede   = null;
+let orderData     = {};
+let deliveryDates = [];
+
+// Qué sedes ya fueron confirmadas esta sesión
+const confirmed = { nordelta: false, madero: false };
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+function init() {
+  const now = new Date();
+  // Convertir a hora Argentina (UTC-3)
+  const ar = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
+  const dow  = ar.getDay();  // 0=dom … 6=sáb
+  const hour = ar.getHours();
+
+  // Plazo vencido: es lunes y ya pasaron las 15:00
+  const deadlinePassed = (dow === 1 && hour >= 15);
+
+  // Calcular el próximo lunes
+  // Mar–Dom: días hasta el lunes siguiente
+  // Lun antes 15hs: también el lunes siguiente (en 7 días, porque "esta semana" ya está en curso)
+  // Lun después 15hs: el lunes en 14 días (saltamos al ciclo que sigue)
+  let daysToNextMonday;
+  if (dow === 1) {
+    // Hoy es lunes
+    daysToNextMonday = deadlinePassed ? 14 : 7;
+  } else {
+    // Mar(2)→6 días, Mié(3)→5 días … Dom(0)→1 día
+    daysToNextMonday = (8 - dow) % 7;
+    // Si da 0 (no debería con la lógica anterior) forzamos 7
+    if (daysToNextMonday === 0) daysToNextMonday = 7;
+  }
+
+  const mon = new Date(ar);
+  mon.setHours(0, 0, 0, 0);
+  mon.setDate(ar.getDate() + daysToNextMonday);
+
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+
+  window._weekMonday = mon;
+
+  document.getElementById('week-range').textContent =
+    'Semana del ' + fmtDate(mon) + ' al ' + fmtDate(sun);
+
+  // Si el plazo venció, mostrar banner y bloquear formulario
+  if (deadlinePassed) {
+    showDeadlineBanner();
+  }
+}
+
+function showDeadlineBanner() {
+  // Insertar banner encima del selector de sedes
+  const sedeCard = document.getElementById('step-sede');
+  const banner = document.createElement('div');
+  banner.className = 'deadline-passed-banner fade-in';
+  banner.innerHTML = `
+    <span class="dpb-icon">🔒</span>
+    <div>
+      <strong>El plazo de este lunes cerró a las 15:00 hs.</strong><br>
+      Ya podés cargar el pedido para la semana siguiente.
+    </div>`;
+  sedeCard.parentNode.insertBefore(banner, sedeCard);
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+}
+
+function isoDate(d) {
+  return d.toISOString().split('T')[0];
+}
+
+// ════════════════════════════════════════════════
+// INICIAR PEDIDO PARA UNA SEDE
+// ════════════════════════════════════════════════
+function startOrder(sede) {
+  if (confirmed[sede]) return; // ya confirmada, no hacer nada
+
+  currentSede   = sede;
+  orderData     = {};
+  deliveryDates = [];
+
+  // Mostrar sección de pedido
+  document.getElementById('order-section').style.display = 'block';
+  document.getElementById('order-sede-title').textContent = SEDE_LABELS[sede];
+  document.getElementById('summary-title').textContent    = SEDE_LABELS[sede];
+
+  buildDayUI();
+  hideError();
+
+  document.getElementById('order-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ════════════════════════════════════════════════
+// BUILD DAY UI
+// ════════════════════════════════════════════════
+function buildDayUI() {
+  const monday     = window._weekMonday;
+  const allowedDows = SEDE_DAYS[currentSede];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    if (allowedDows.includes(d.getDay())) {
+      deliveryDates.push(d);
+      orderData[isoDate(d)] = {};
+      PRODUCTS.forEach(p => { orderData[isoDate(d)][p.code] = 0; });
+    }
+  }
+
+  const tabsEl   = document.getElementById('day-tabs');
+  const panelsEl = document.getElementById('day-panels');
+  tabsEl.innerHTML   = '';
+  panelsEl.innerHTML = '';
+
+  deliveryDates.forEach((d, idx) => {
+    const iso = isoDate(d);
+    const dow = d.getDay();
+
+    const tab = document.createElement('button');
+    tab.className = 'day-tab' + (idx === 0 ? ' active' : '');
+    tab.id = 'tab-' + iso;
+    tab.innerHTML = DAY_SHORT[dow] + ' ' + d.getDate() +
+      ' <span class="dot" id="dot-' + iso + '"></span>';
+    tab.onclick = () => switchDay(iso);
+    tabsEl.appendChild(tab);
+
+    const panel = document.createElement('div');
+    panel.className = 'day-panel' + (idx === 0 ? ' active' : '');
+    panel.id = 'panel-' + iso;
+
+    const rows = PRODUCTS.map(p => `
+      <tr>
+        <td class="code">${p.code}</td>
+        <td>${p.name}</td>
+        <td>
+          <div class="qty-wrap">
+            <button class="qty-btn" onclick="changeQty('${iso}','${p.code}',-1)">−</button>
+            <input class="qty-input" type="number" min="0" value="0"
+              id="qty-${iso}-${p.code}"
+              oninput="setQty('${iso}','${p.code}',this.value)"
+              onchange="setQty('${iso}','${p.code}',this.value)" />
+            <button class="qty-btn" onclick="changeQty('${iso}','${p.code}',1)">+</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    panel.innerHTML = `
+      <div class="day-header">
+        <h3>${DAY_NAMES[dow]}</h3>
+        <span class="date-str">${d.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</span>
+      </div>
+      <table class="ptable">
+        <thead><tr>
+          <th>Código</th><th>Producto</th><th>Cantidad</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    panelsEl.appendChild(panel);
+  });
+
+  updateSummary();
+}
+
+function switchDay(iso) {
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + iso).classList.add('active');
+  document.getElementById('panel-' + iso).classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+// CANTIDADES
+// ════════════════════════════════════════════════
+function changeQty(iso, code, delta) {
+  const next = Math.max(0, (orderData[iso][code] || 0) + delta);
+  orderData[iso][code] = next;
+  document.getElementById('qty-' + iso + '-' + code).value = next;
+  refreshDot(iso);
+  updateSummary();
+}
+
+function setQty(iso, code, val) {
+  const n = Math.max(0, parseInt(val) || 0);
+  orderData[iso][code] = n;
+  document.getElementById('qty-' + iso + '-' + code).value = n;
+  refreshDot(iso);
+  updateSummary();
+}
+
+function refreshDot(iso) {
+  const has = Object.values(orderData[iso]).some(q => q > 0);
+  const dot = document.getElementById('dot-' + iso);
+  if (dot) dot.classList.toggle('visible', has);
+}
+
+// ════════════════════════════════════════════════
+// RESUMEN
+// ════════════════════════════════════════════════
+function updateSummary() {
+  const grid = document.getElementById('summary-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  deliveryDates.forEach(d => {
+    const iso  = isoDate(d);
+    const dow  = d.getDay();
+    const has  = Object.values(orderData[iso]).some(q => q > 0);
+    const div  = document.createElement('div');
+    div.className = 's-day';
+    let html = '<div class="s-day-name">' + DAY_SHORT[dow] + ' ' + d.getDate() + '</div>';
+    if (!has) {
+      html += '<div class="s-empty">Sin pedido</div>';
+    } else {
+      PRODUCTS.forEach(p => {
+        if (orderData[iso][p.code] > 0)
+          html += '<div class="s-item">× ' + orderData[iso][p.code] + ' ' + p.name + '</div>';
+      });
+    }
+    div.innerHTML = html;
+    grid.appendChild(div);
+  });
+}
+
+// ════════════════════════════════════════════════
+// SUBMIT
+// ════════════════════════════════════════════════
+async function submitOrder() {
+  const total = deliveryDates.reduce((sum, d) =>
+    sum + Object.values(orderData[isoDate(d)]).reduce((s, q) => s + q, 0), 0);
+
+  if (total === 0) {
+    showError('El pedido está vacío. Ingresá al menos un producto antes de confirmar.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Enviando…';
+  hideError();
+
+  const payload = {
+    sede: SEDE_LABELS[currentSede],
+    semana: document.getElementById('week-range').textContent,
+    timestamp: new Date().toISOString(),
+    dias: deliveryDates
+      .map(d => ({
+        fecha: isoDate(d),
+        dia: DAY_NAMES[d.getDay()],
+        productos: PRODUCTS
+          .map(p => ({ codigo: p.code, nombre: p.name, cantidad: orderData[isoDate(d)][p.code] || 0 }))
+          .filter(p => p.cantidad > 0),
+      }))
+      .filter(d => d.productos.length > 0),
+  };
+
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    onOrderSuccess();
+  } catch (err) {
+    showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a planificacion@somosfeed.com.ar');
+    btn.disabled = false;
+    btn.innerHTML = 'Confirmar pedido';
+  }
+}
+
+function onOrderSuccess() {
+  // Marcar sede como confirmada
+  confirmed[currentSede] = true;
+
+  // Mostrar pantalla de éxito
+  document.getElementById('app-container').style.display  = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  document.getElementById('success-sede-label').textContent = SEDE_LABELS[currentSede];
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════════
+// VOLVER AL INICIO
+// ════════════════════════════════════════════════
+function backToHome() {
+  // Ocultar success, mostrar app
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('app-container').style.display  = 'block';
+  document.getElementById('order-section').style.display  = 'none';
+
+  // Marcar visualmente la sede confirmada
+  ['nordelta', 'madero'].forEach(s => {
+    const card = document.getElementById('card-' + s);
+    if (confirmed[s]) {
+      card.classList.add('done');
+    }
+  });
+
+  // Reset form state (por si se quiere cargar la otra sede)
+  currentSede   = null;
+  orderData     = {};
+  deliveryDates = [];
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = false;
+  btn.innerHTML = 'Confirmar pedido';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+init();
+</script>
+
+</body>
+</html>
