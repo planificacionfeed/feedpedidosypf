@@ -796,14 +796,14 @@
 <!-- FOOTER -->
 <footer>
   <span>© FEED — Happiness is Homemade</span>
-  <span>Consultas: <a href="mailto:marianon@somosfeed.com.ar">mariano@somosfeed.com.ar</a></span>
+  <span>Consultas: <a href="mailto:planificacion@somosfeed.com.ar">planificacion@somosfeed.com.ar</a></span>
 </footer>
 
 <script>
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxDnaeFma4zvpcrtu62KSOz37gxfFW8cPkXzFg7AxmffO8ar64hPLSxWjFO5cSpFmvEBw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4iWJSr-PzvlzDLrAbCMZSxlL27_HvXcsJxTFjFnuF3R7Bwzu9rNEt8fbbhH_P4Lswmw/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -828,21 +828,31 @@ const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 // ════════════════════════════════════════════════
 // ESTADO
 // ════════════════════════════════════════════════
+// ── USUARIOS (hashes — las claves reales nunca están acá) ──
+// hash = SHA-256(usuario + ':' + clave + ':feed_salt_2025')
+const USUARIOS_HASH = {
+  'ypfpedidos':  'ea6c725eb4362ba7f81dc2bc0033b006a292145302b8df86232108d661231928',
+  'feedpruebas':    '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877'
+};
+const SALT = 'feed_salt_2025';
+
 let currentSede   = null;
 let orderData     = {};
 let deliveryDates = [];
-let sessionToken  = sessionStorage.getItem('feed_token') || null;
+
+// Credenciales de sesión (en memoria, se pierden al cerrar pestaña)
+let sessionUsuario  = sessionStorage.getItem('feed_usuario') || null;
+let sessionHashClave = sessionStorage.getItem('feed_hash')   || null;
 
 // Qué sedes ya fueron confirmadas esta sesión
 const confirmed = { nordelta: false, madero: false };
 
 // ════════════════════════════════════════════════
-// LOGIN
+// LOGIN — validación local con hash
 // ════════════════════════════════════════════════
 async function doLogin() {
   const usuario = document.getElementById('input-usuario').value.trim();
   const clave   = document.getElementById('input-clave').value;
-  const btn     = document.getElementById('btn-login');
   const errEl   = document.getElementById('login-error');
 
   if (!usuario || !clave) {
@@ -851,33 +861,25 @@ async function doLogin() {
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Verificando…';
   errEl.style.display = 'none';
 
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', usuario, clave }),
-    });
-    const json = await res.json();
+  // Calcular hash localmente con Web Crypto API
+  const encoder  = new TextEncoder();
+  const data     = encoder.encode(usuario + ':' + clave + ':' + SALT);
+  const hashBuf  = await crypto.subtle.digest('SHA-256', data);
+  const hashHex  = Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
 
-    if (json.status === 'ok') {
-      sessionToken = json.token;
-      sessionStorage.setItem('feed_token', json.token);
-      showApp();
-    } else {
-      errEl.textContent = json.message || 'Usuario o contraseña incorrectos.';
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.innerHTML = 'Ingresar';
-    }
-  } catch (err) {
-    errEl.textContent = 'Error de conexión. Intentá nuevamente.';
+  // Comparar con los hashes conocidos (nunca viaja la clave en texto plano)
+  if (USUARIOS_HASH[usuario] && USUARIOS_HASH[usuario] === hashHex) {
+    sessionUsuario   = usuario;
+    sessionHashClave = hashHex;
+    sessionStorage.setItem('feed_usuario', usuario);
+    sessionStorage.setItem('feed_hash',    hashHex);
+    showApp();
+  } else {
+    errEl.textContent = 'Usuario o contraseña incorrectos.';
     errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.innerHTML = 'Ingresar';
   }
 }
 
@@ -887,16 +889,14 @@ function showApp() {
   init();
 }
 
-// Enter en los campos de login
 document.addEventListener('DOMContentLoaded', () => {
   ['input-usuario','input-clave'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });
   });
-
-  // Si ya hay token en sesión, entrar directo
-  if (sessionToken) {
+  // Si ya hay sesión activa, entrar directo
+  if (sessionUsuario && sessionHashClave && USUARIOS_HASH[sessionUsuario] === sessionHashClave) {
     showApp();
   }
 });
@@ -1147,7 +1147,8 @@ async function submitOrder() {
 
   const payload = {
     action: 'pedido',
-    token: sessionToken,
+    usuario: sessionUsuario,
+    hashClave: sessionHashClave,
     sede: SEDE_LABELS[currentSede],
     semana: document.getElementById('week-range').textContent,
     timestamp: new Date().toISOString(),
@@ -1163,24 +1164,13 @@ async function submitOrder() {
   };
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const json = await res.json();
-    if (json.status === 'ok') {
-      onOrderSuccess();
-    } else if (json.message && json.message.includes('Sesión')) {
-      // Token expirado — mandar al login
-      sessionStorage.removeItem('feed_token');
-      sessionToken = null;
-      showError('Tu sesión expiró. Recargá la página para volver a ingresar.');
-      btn.disabled = false;
-      btn.innerHTML = 'Confirmar pedido';
-    } else {
-      throw new Error(json.message || 'Error desconocido');
-    }
+    onOrderSuccess();
   } catch (err) {
     showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a planificacion@somosfeed.com.ar');
     btn.disabled = false;
