@@ -585,7 +585,7 @@
 
 <!-- HEADER -->
 <header>
-  <svg width="230" height="83" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+  <svg width="110" height="40" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
     <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
     <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
     <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
@@ -685,7 +685,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwas7QEBkfCdH0tJ96f3sZgbws-LuUvq2XmSPGgwH63MiY8rmfIdEjFmEa68wyDV6aqFw/exec';
+const APPS_SCRIPT_URL = 'TU_APPS_SCRIPT_URL_AQUI';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -722,32 +722,41 @@ const confirmed = { nordelta: false, madero: false };
 // ════════════════════════════════════════════════
 function init() {
   const now = new Date();
-  // Convertir a hora Argentina (UTC-3)
-  const ar = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
-  const dow  = ar.getDay();  // 0=dom … 6=sáb
+  const ar  = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
+  const dow  = ar.getDay();  // 0=dom, 1=lun … 6=sáb
   const hour = ar.getHours();
 
-  // Plazo vencido: es lunes y ya pasaron las 15:00
+  // Lógica:
+  // El pedido siempre corresponde a la semana que empieza en el PRÓXIMO lunes
+  // contado desde el lunes siguiente al día de hoy.
+  // Es decir: siempre mostramos el lunes que está a 2 semanas de distancia
+  // del lunes más cercano (o el lunes en 7 días si hoy es martes–lunes 15hs).
+  //
+  // Ventana válida para hacer el pedido: mar a lun 15hs
+  // Ejemplo: pedido semana 1/6 → se puede hacer mar 19/5 a lun 25/5 15hs
+  //
+  // Casos:
+  //  - Mar(2) a Dom(0): días hasta el próximo lunes = (8-dow)%7, luego +7 más
+  //  - Lun(1) antes 15hs: días hasta este lunes = 0, luego +7
+  //  - Lun(1) a las 15hs o después: plazo vencido → días hasta próximo lunes = 7, luego +7 más
+
   const deadlinePassed = (dow === 1 && hour >= 15);
 
-  // Calcular el próximo lunes
-  // Mar–Dom: días hasta el lunes siguiente
-  // Lun antes 15hs: también el lunes siguiente (en 7 días, porque "esta semana" ya está en curso)
-  // Lun después 15hs: el lunes en 14 días (saltamos al ciclo que sigue)
-  let daysToNextMonday;
+  // Primero calculamos cuántos días faltan para el lunes "base" (el más cercano)
+  let daysToThisMonday;
   if (dow === 1) {
-    // Hoy es lunes
-    daysToNextMonday = deadlinePassed ? 14 : 7;
+    daysToThisMonday = 0; // hoy es lunes
   } else {
-    // Mar(2)→6 días, Mié(3)→5 días … Dom(0)→1 día
-    daysToNextMonday = (8 - dow) % 7;
-    // Si da 0 (no debería con la lógica anterior) forzamos 7
-    if (daysToNextMonday === 0) daysToNextMonday = 7;
+    daysToThisMonday = (8 - dow) % 7; // días hasta el próximo lunes
   }
+
+  // La semana a mostrar empieza 7 días DESPUÉS de ese lunes base
+  // Si el plazo venció (lun ≥15hs), el lunes base ya "pasó" → sumamos 7 más
+  const daysToTargetMonday = daysToThisMonday + 7 + (deadlinePassed ? 7 : 0);
 
   const mon = new Date(ar);
   mon.setHours(0, 0, 0, 0);
-  mon.setDate(ar.getDate() + daysToNextMonday);
+  mon.setDate(ar.getDate() + daysToTargetMonday);
 
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
@@ -757,7 +766,6 @@ function init() {
   document.getElementById('week-range').textContent =
     'Semana del ' + fmtDate(mon) + ' al ' + fmtDate(sun);
 
-  // Si el plazo venció, mostrar banner y bloquear formulario
   if (deadlinePassed) {
     showDeadlineBanner();
   }
