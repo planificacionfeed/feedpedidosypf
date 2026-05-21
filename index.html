@@ -677,7 +677,7 @@
 <div id="login-screen">
   <div class="login-box fade-in">
     <div class="login-logo">
-      <svg width="100" height="36" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+      <svg width="150" height="54" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
         <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
         <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
         <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
@@ -703,7 +703,7 @@
 
 <!-- HEADER -->
 <header>
-  <svg width="110" height="40" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+  <svg width="200" height="73" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
     <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
     <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
     <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
@@ -803,7 +803,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4iWJSr-PzvlzDLrAbCMZSxlL27_HvXcsJxTFjFnuF3R7Bwzu9rNEt8fbbhH_P4Lswmw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5ftUpPOHuruCiRjqzPboDWZVPSMCefncpr0xnNEWN_FYS9Mornvv6TxnNwopVCM0NOQ/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -1172,7 +1172,7 @@ async function submitOrder() {
     });
     onOrderSuccess();
   } catch (err) {
-    showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a planificacion@somosfeed.com.ar');
+    showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
     btn.disabled = false;
     btn.innerHTML = 'Confirmar pedido';
   }
