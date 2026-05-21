@@ -568,6 +568,96 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* ── LOGIN ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      background: var(--cream);
+    }
+    .login-box {
+      background: var(--white);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      padding: 44px 40px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .login-box .login-logo {
+      margin-bottom: 28px;
+    }
+    .login-box h2 {
+      font-family: 'Suez One', serif;
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+    .login-box .login-sub {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      margin-bottom: 28px;
+    }
+    .login-field {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+    .login-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-family: 'Lato', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      transition: border-color .15s;
+    }
+    .login-field input:focus {
+      outline: none;
+      border-color: var(--ink);
+      background: var(--white);
+    }
+    .btn-login {
+      width: 100%;
+      margin-top: 8px;
+      background: var(--ink);
+      color: var(--white);
+      border: 2px solid var(--ink);
+      padding: 13px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      font-family: 'Lato', sans-serif;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .18s, color .18s;
+    }
+    .btn-login:hover { background: var(--white); color: var(--ink); }
+    .btn-login:disabled { background: var(--line); border-color: var(--line); color: var(--white); cursor: not-allowed; }
+    .login-error {
+      background: #FDECEA;
+      border: 1px solid #E8998F;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--err);
+      margin-top: 14px;
+      display: none;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
       header { padding: 0 18px; }
@@ -583,9 +673,37 @@
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box fade-in">
+    <div class="login-logo">
+      <svg width="100" height="36" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+        <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
+        <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
+        <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
+      </svg>
+    </div>
+    <h2>Portal YPF</h2>
+    <p class="login-sub">Ingresá con tu usuario y contraseña</p>
+    <div class="login-field">
+      <label for="input-usuario">Usuario</label>
+      <input type="text" id="input-usuario" placeholder="tu_usuario" autocomplete="username" />
+    </div>
+    <div class="login-field">
+      <label for="input-clave">Contraseña</label>
+      <input type="password" id="input-clave" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP (oculta hasta login) -->
+<div id="main-app" style="display:none; flex-direction:column; min-height:100vh;">
+
 <!-- HEADER -->
 <header>
-  <svg width="200" height="73" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+  <svg width="110" height="40" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
     <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
     <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
     <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
@@ -678,14 +796,14 @@
 <!-- FOOTER -->
 <footer>
   <span>© FEED — Happiness is Homemade</span>
-  <span>Consultas: <a href="mailto:planificacion@somosfeed.com.ar">planificacion@somosfeed.com.ar</a></span>
+  <span>Consultas: <a href="mailto:marianon@somosfeed.com.ar">mariano@somosfeed.com.ar</a></span>
 </footer>
 
 <script>
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwas7QEBkfCdH0tJ96f3sZgbws-LuUvq2XmSPGgwH63MiY8rmfIdEjFmEa68wyDV6aqFw/execI';
+const APPS_SCRIPT_URL = 'TU_APPS_SCRIPT_URL_AQUI';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -713,9 +831,75 @@ const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 let currentSede   = null;
 let orderData     = {};
 let deliveryDates = [];
+let sessionToken  = sessionStorage.getItem('feed_token') || null;
 
 // Qué sedes ya fueron confirmadas esta sesión
 const confirmed = { nordelta: false, madero: false };
+
+// ════════════════════════════════════════════════
+// LOGIN
+// ════════════════════════════════════════════════
+async function doLogin() {
+  const usuario = document.getElementById('input-usuario').value.trim();
+  const clave   = document.getElementById('input-clave').value;
+  const btn     = document.getElementById('btn-login');
+  const errEl   = document.getElementById('login-error');
+
+  if (!usuario || !clave) {
+    errEl.textContent = 'Completá usuario y contraseña.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Verificando…';
+  errEl.style.display = 'none';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', usuario, clave }),
+    });
+    const json = await res.json();
+
+    if (json.status === 'ok') {
+      sessionToken = json.token;
+      sessionStorage.setItem('feed_token', json.token);
+      showApp();
+    } else {
+      errEl.textContent = json.message || 'Usuario o contraseña incorrectos.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Ingresar';
+    }
+  } catch (err) {
+    errEl.textContent = 'Error de conexión. Intentá nuevamente.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = 'Ingresar';
+  }
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display     = 'flex';
+  init();
+}
+
+// Enter en los campos de login
+document.addEventListener('DOMContentLoaded', () => {
+  ['input-usuario','input-clave'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+
+  // Si ya hay token en sesión, entrar directo
+  if (sessionToken) {
+    showApp();
+  }
+});
 
 // ════════════════════════════════════════════════
 // INIT
@@ -962,6 +1146,8 @@ async function submitOrder() {
   hideError();
 
   const payload = {
+    action: 'pedido',
+    token: sessionToken,
     sede: SEDE_LABELS[currentSede],
     semana: document.getElementById('week-range').textContent,
     timestamp: new Date().toISOString(),
@@ -977,13 +1163,24 @@ async function submitOrder() {
   };
 
   try {
-    await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    onOrderSuccess();
+    const json = await res.json();
+    if (json.status === 'ok') {
+      onOrderSuccess();
+    } else if (json.message && json.message.includes('Sesión')) {
+      // Token expirado — mandar al login
+      sessionStorage.removeItem('feed_token');
+      sessionToken = null;
+      showError('Tu sesión expiró. Recargá la página para volver a ingresar.');
+      btn.disabled = false;
+      btn.innerHTML = 'Confirmar pedido';
+    } else {
+      throw new Error(json.message || 'Error desconocido');
+    }
   } catch (err) {
     showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a planificacion@somosfeed.com.ar');
     btn.disabled = false;
@@ -1043,6 +1240,8 @@ function hideError() {
 
 init();
 </script>
+
+</div><!-- /main-app -->
 
 </body>
 </html>
