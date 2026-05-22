@@ -544,6 +544,23 @@
     footer a { color: var(--ink-soft); text-decoration: none; }
     footer a:hover { color: var(--ink); }
 
+    /* ── BANNER PEDIDO YA REALIZADO ── */
+    .pedido-realizado-banner {
+      background: var(--ok-bg);
+      border: 1.5px solid var(--ok-br);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      color: var(--ok);
+      line-height: 1.5;
+    }
+    .pedido-realizado-banner .prb-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .pedido-realizado-banner strong { color: #1A4D33; }
+
     /* ── DEADLINE PASSED BANNER ── */
     .deadline-passed-banner {
       background: #FEF3E2;
@@ -677,7 +694,7 @@
 <div id="login-screen">
   <div class="login-box fade-in">
     <div class="login-logo">
-      <svg width="150" height="54" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+      <svg width="200" height="72" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
         <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
         <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
         <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
@@ -703,7 +720,7 @@
 
 <!-- HEADER -->
 <header>
-  <svg width="200" height="73" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
+  <svg width="220" height="80" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
     <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
     <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
     <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
@@ -723,6 +740,12 @@
 
 <!-- APP PRINCIPAL -->
 <div class="container" id="app-container">
+
+  <!-- BANNER PEDIDO YA REALIZADO (se muestra si hay pedido guardado para esta semana) -->
+  <div id="pedido-realizado-banner" style="display:none" class="pedido-realizado-banner fade-in">
+    <span class="prb-icon">✅</span>
+    <span id="pedido-realizado-texto"></span>
+  </div>
 
   <!-- SELECTOR DE SEDE -->
   <div class="card fade-in" id="step-sede">
@@ -831,8 +854,9 @@ const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 // ── USUARIOS (hashes — las claves reales nunca están acá) ──
 // hash = SHA-256(usuario + ':' + clave + ':feed_salt_2025')
 const USUARIOS_HASH = {
-  'ypfpedidos':  'ea6c725eb4362ba7f81dc2bc0033b006a292145302b8df86232108d661231928',
-  'feedpruebas':    '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877'
+  'ypf_nordelta':  '0807dc0a823fa1188f62a60dcf04196f33dabd8078840904685c0b0260c12a8e',
+  'ypf_madero':    'd0a278281c2fa23599b1be0e95b8065d88e6940c057ff0074dc7e74f886b6c75',
+  'planificacion': 'bb260975e06cc435236a456c1dce5432744fc970262eb826d394a3cb26e4c514',
 };
 const SALT = 'feed_salt_2025';
 
@@ -887,6 +911,7 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display     = 'flex';
   init();
+  actualizarBannerPedido();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1179,8 +1204,19 @@ async function submitOrder() {
 }
 
 function onOrderSuccess() {
-  // Marcar sede como confirmada
   confirmed[currentSede] = true;
+
+  // Guardar en localStorage: clave = semana, valor = {sede, fecha}
+  const weekKey = 'feed_pedido_' + isoDate(window._weekMonday);
+  const existing = JSON.parse(localStorage.getItem(weekKey) || '[]');
+  const fechaHoy = new Date().toLocaleDateString('es-AR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    timeZone: 'America/Argentina/Buenos_Aires'
+  });
+  if (!existing.find(e => e.sede === SEDE_LABELS[currentSede])) {
+    existing.push({ sede: SEDE_LABELS[currentSede], fecha: fechaHoy });
+  }
+  localStorage.setItem(weekKey, JSON.stringify(existing));
 
   // Mostrar pantalla de éxito
   document.getElementById('app-container').style.display  = 'none';
@@ -1190,23 +1226,48 @@ function onOrderSuccess() {
 }
 
 // ════════════════════════════════════════════════
+// BANNER PEDIDO REALIZADO
+// ════════════════════════════════════════════════
+function actualizarBannerPedido() {
+  const weekKey  = 'feed_pedido_' + isoDate(window._weekMonday);
+  const pedidos  = JSON.parse(localStorage.getItem(weekKey) || '[]');
+  const banner   = document.getElementById('pedido-realizado-banner');
+  const texto    = document.getElementById('pedido-realizado-texto');
+
+  if (pedidos.length === 0) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // Armar texto según cuántos pedidos hay
+  const lineas = pedidos.map(p =>
+    `<strong>${p.sede}</strong> el ${p.fecha}`
+  ).join(' · ');
+
+  texto.innerHTML = pedidos.length === 1
+    ? `Ya hay un pedido realizado: ${lineas}`
+    : `Ya hay pedidos realizados: ${lineas}`;
+
+  banner.style.display = 'flex';
+
+  // También marcar las cards como done
+  pedidos.forEach(p => {
+    const sede = Object.keys(SEDE_LABELS).find(k => SEDE_LABELS[k] === p.sede);
+    if (sede) {
+      confirmed[sede] = true;
+      document.getElementById('card-' + sede).classList.add('done');
+    }
+  });
+}
+
+// ════════════════════════════════════════════════
 // VOLVER AL INICIO
 // ════════════════════════════════════════════════
 function backToHome() {
-  // Ocultar success, mostrar app
   document.getElementById('success-screen').style.display = 'none';
   document.getElementById('app-container').style.display  = 'block';
   document.getElementById('order-section').style.display  = 'none';
 
-  // Marcar visualmente la sede confirmada
-  ['nordelta', 'madero'].forEach(s => {
-    const card = document.getElementById('card-' + s);
-    if (confirmed[s]) {
-      card.classList.add('done');
-    }
-  });
-
-  // Reset form state (por si se quiere cargar la otra sede)
   currentSede   = null;
   orderData     = {};
   deliveryDates = [];
@@ -1215,6 +1276,7 @@ function backToHome() {
   btn.disabled = false;
   btn.innerHTML = 'Confirmar pedido';
 
+  actualizarBannerPedido();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
