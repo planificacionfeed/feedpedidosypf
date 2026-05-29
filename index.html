@@ -153,7 +153,6 @@
       gap: 14px;
     }
 
-    /* Estado normal — clickeable */
     .sede-card {
       border: 1.5px solid var(--line);
       border-radius: var(--radius);
@@ -162,20 +161,19 @@
       transition: border-color .18s, background .18s;
       background: var(--cream);
       position: relative;
-      text-decoration: none;
-      color: inherit;
       display: block;
     }
     .sede-card:hover { border-color: var(--accent2); background: var(--cream-dk); }
 
-    /* Estado: pedido ya realizado */
-    .sede-card.done {
+    /* Estado: pedido ya realizado — sigue clickeable, solo cambia look */
+    .sede-card.has-pedido {
       border-color: var(--ok-br);
       background: var(--ok-bg);
-      cursor: default;
-      pointer-events: none;
     }
-    .sede-card.done:hover { border-color: var(--ok-br); background: var(--ok-bg); }
+    .sede-card.has-pedido:hover {
+      border-color: var(--ok);
+      background: #DDF0E8;
+    }
 
     .sede-card .sede-name {
       font-family: 'Suez One', serif;
@@ -187,25 +185,26 @@
       color: var(--ink-soft);
     }
 
-    /* Chip "Pedido realizado" */
-    .done-chip {
+    /* Chip "Pedido realizado" — visible solo cuando has-pedido */
+    .pedido-chip {
       display: none;
       align-items: center;
       gap: 6px;
-      margin-top: 14px;
-      background: var(--ok);
-      color: white;
+      margin-top: 10px;
+      background: var(--ok-bg);
+      border: 1px solid var(--ok-br);
+      color: var(--ok);
       font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 1.5px;
+      letter-spacing: 1px;
       text-transform: uppercase;
-      padding: 5px 12px;
+      padding: 4px 10px;
       border-radius: 4px;
       width: fit-content;
     }
-    .sede-card.done .done-chip { display: flex; }
+    .sede-card.has-pedido .pedido-chip { display: flex; }
 
-    /* Checkmark grande en esquina */
+    /* Checkmark en esquina */
     .sede-check {
       position: absolute;
       top: 16px; right: 16px;
@@ -218,13 +217,13 @@
       color: transparent;
       transition: all .2s;
     }
-    .sede-card.done .sede-check {
+    .sede-card.has-pedido .sede-check {
       background: var(--ok);
       border-color: var(--ok);
       color: white;
     }
 
-    /* Flecha "Cargar pedido" */
+    /* CTA */
     .sede-cta {
       display: flex;
       align-items: center;
@@ -238,7 +237,11 @@
       transition: gap .15s;
     }
     .sede-card:hover .sede-cta { gap: 10px; }
-    .sede-card.done .sede-cta { display: none; }
+    /* Cuando hay pedido el CTA cambia a "Editar pedido" */
+    .sede-card.has-pedido .sede-cta-nuevo { display: none; }
+    .sede-cta-editar { display: none; }
+    .sede-card.has-pedido .sede-cta-editar { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 0.78rem; font-weight: 700; color: var(--ok); letter-spacing: 0.5px; text-transform: uppercase; transition: gap .15s; }
+    .sede-card.has-pedido:hover .sede-cta-editar { gap: 10px; }
 
     /* ── ORDER SECTION ── */
     #order-section { display: none; }
@@ -248,13 +251,6 @@
       align-items: center;
       gap: 12px;
       margin-bottom: 6px;
-    }
-    .order-sede-label span {
-      font-size: 0.67rem;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--accent2);
     }
 
     /* ── DEADLINE STRIP ── */
@@ -272,6 +268,23 @@
       line-height: 1.5;
     }
     .deadline-strip .di { flex-shrink: 0; margin-top: 1px; }
+
+    /* Strip de "estás editando" */
+    .edit-strip {
+      background: #EAF4EE;
+      border: 1px solid var(--ok-br);
+      border-radius: 8px;
+      padding: 11px 16px;
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.83rem;
+      color: var(--ok);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .edit-strip.visible { display: flex; }
+    .edit-strip .di { flex-shrink: 0; margin-top: 1px; }
 
     /* ── DAY TABS ── */
     .day-tabs {
@@ -456,7 +469,6 @@
       line-height: 1.5;
     }
 
-    /* Pantalla éxito por sede */
     #success-screen {
       display: none;
       max-width: 520px;
@@ -604,9 +616,7 @@
       max-width: 400px;
       text-align: center;
     }
-    .login-box .login-logo {
-      margin-bottom: 28px;
-    }
+    .login-box .login-logo { margin-bottom: 28px; }
     .login-box h2 {
       font-family: 'Suez One', serif;
       font-size: 1.4rem;
@@ -617,10 +627,7 @@
       color: var(--ink-soft);
       margin-bottom: 28px;
     }
-    .login-field {
-      text-align: left;
-      margin-bottom: 16px;
-    }
+    .login-field { text-align: left; margin-bottom: 16px; }
     .login-field label {
       display: block;
       font-size: 0.72rem;
@@ -641,11 +648,7 @@
       color: var(--ink);
       transition: border-color .15s;
     }
-    .login-field input:focus {
-      outline: none;
-      border-color: var(--ink);
-      background: var(--white);
-    }
+    .login-field input:focus { outline: none; border-color: var(--ink); background: var(--white); }
     .btn-login {
       width: 100%;
       margin-top: 8px;
@@ -715,10 +718,9 @@
   </div>
 </div>
 
-<!-- APP (oculta hasta login) -->
+<!-- APP -->
 <div id="main-app" style="display:none; flex-direction:column; min-height:100vh;">
 
-<!-- HEADER -->
 <header>
   <svg width="220" height="80" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
     <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
@@ -728,7 +730,6 @@
   <div class="header-tag">Portal de pedidos · YPF</div>
 </header>
 
-<!-- HERO -->
 <div class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">YPF × FEED — Pedido semanal</div>
@@ -738,49 +739,51 @@
   </div>
 </div>
 
-<!-- APP PRINCIPAL -->
 <div class="container" id="app-container">
 
-  <!-- BANNER PEDIDO YA REALIZADO (se muestra si hay pedido guardado para esta semana) -->
   <div id="pedido-realizado-banner" style="display:none" class="pedido-realizado-banner fade-in">
     <span class="prb-icon">✅</span>
     <span id="pedido-realizado-texto"></span>
   </div>
 
-  <!-- SELECTOR DE SEDE -->
   <div class="card fade-in" id="step-sede">
     <div class="card-label">Seleccioná una sede</div>
     <h2>¿Para qué sede es el pedido?</h2>
     <div class="sede-grid">
 
       <div class="sede-card" id="card-nordelta" onclick="startOrder('nordelta')">
-        <div class="sede-check" id="check-nordelta">✓</div>
+        <div class="sede-check">✓</div>
         <div class="sede-name">YPF Nordelta</div>
         <div class="sede-days">Entregas: Lun · Mié · Vie · Dom</div>
-        <div class="done-chip">✓ &nbsp;Pedido realizado</div>
-        <div class="sede-cta">Cargar pedido <span>→</span></div>
+        <div class="pedido-chip" id="chip-nordelta">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
       </div>
 
       <div class="sede-card" id="card-madero" onclick="startOrder('madero')">
-        <div class="sede-check" id="check-madero">✓</div>
+        <div class="sede-check">✓</div>
         <div class="sede-name">YPF Madero</div>
         <div class="sede-days">Entregas: Lun · Mar · Mié · Jue · Vie</div>
-        <div class="done-chip">✓ &nbsp;Pedido realizado</div>
-        <div class="sede-cta">Cargar pedido <span>→</span></div>
+        <div class="pedido-chip" id="chip-madero">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
       </div>
 
     </div>
   </div>
 
-  <!-- FORMULARIO DE PEDIDO -->
   <div id="order-section" style="display:none">
-
     <div class="card fade-in">
       <div class="order-sede-label">
         <span class="card-label" style="margin-bottom:0">Pedido —</span>
         <span id="order-sede-title" style="font-family:'Suez One',serif; font-size:1.05rem;"></span>
       </div>
       <div style="height:18px"></div>
+
+      <div class="edit-strip" id="edit-strip">
+        <span class="di">✎</span>
+        <span>Estás <strong>editando</strong> un pedido ya enviado. Al confirmar se enviará un nuevo aviso al equipo de planificación.</span>
+      </div>
 
       <div class="deadline-strip">
         <span class="di">⏰</span>
@@ -802,21 +805,18 @@
       </div>
       <div class="err-strip" id="error-msg"></div>
     </div>
-
   </div>
 
 </div>
 
-<!-- PANTALLA ÉXITO -->
 <div id="success-screen">
   <div class="success-icon">✓</div>
-  <h2>¡Pedido confirmado!</h2>
+  <h2 id="success-title">¡Pedido confirmado!</h2>
   <div class="success-sede" id="success-sede-label">—</div>
-  <p>El pedido fue registrado correctamente. Nuestro equipo ya recibió la notificación y lo está procesando.</p>
+  <p id="success-msg">El pedido fue registrado correctamente. Nuestro equipo ya recibió la notificación y lo está procesando.</p>
   <button class="btn-back" onclick="backToHome()">Volver al inicio</button>
 </div>
 
-<!-- FOOTER -->
 <footer>
   <span>© FEED — Happiness is Homemade</span>
   <span>Consultas: <a href="mailto:mariano@somosfeed.com.ar">mariano@somosfeed.com.ar</a></span>
@@ -826,7 +826,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEBxRVvDe1xlu4_yZcADRbCmA3hSoFLqXg973NW_dzqEBNfkZkrNEmIlPi5ZOQjfUUnw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbws0chhe0kY6RBIySSCQHP1RM5XG7BWezlEbLQW8UJVxNjy60sM_HZB9c2aFr2HcQblmg/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -836,8 +836,8 @@ const PRODUCTS = [
 ];
 
 const SEDE_DAYS = {
-  nordelta: [1, 3, 5, 0],   // lun, mié, vie, dom
-  madero:   [1, 2, 3, 4, 5], // lun a vie
+  nordelta: [1, 3, 5, 0],
+  madero:   [1, 2, 3, 4, 5],
 };
 
 const SEDE_LABELS = {
@@ -848,30 +848,31 @@ const SEDE_LABELS = {
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
-// ════════════════════════════════════════════════
-// ESTADO
-// ════════════════════════════════════════════════
-// ── USUARIOS (hashes — las claves reales nunca están acá) ──
-// hash = SHA-256(usuario + ':' + clave + ':feed_salt_2025')
+// ── USUARIOS (hashes) ──
 const USUARIOS_HASH = {
   'ypfpedidos':  'ea6c725eb4362ba7f81dc2bc0033b006a292145302b8df86232108d661231928',
-  'feedpruebas':    '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877'
+  'feedpruebas': '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877',
 };
 const SALT = 'feed_salt_2025';
 
-let currentSede   = null;
-let orderData     = {};
-let deliveryDates = [];
+// ── ESTADO ──
+let currentSede    = null;
+let orderData      = {};
+let deliveryDates  = [];
+let isEditing      = false; // true si el usuario ya tenía pedido para esta sede
 
-// Credenciales de sesión (en memoria, se pierden al cerrar pestaña)
-let sessionUsuario  = sessionStorage.getItem('feed_usuario') || null;
-let sessionHashClave = sessionStorage.getItem('feed_hash')   || null;
-
-// Qué sedes ya fueron confirmadas esta sesión
-const confirmed = { nordelta: false, madero: false };
+let sessionUsuario   = sessionStorage.getItem('feed_usuario') || null;
+let sessionHashClave = sessionStorage.getItem('feed_hash')    || null;
 
 // ════════════════════════════════════════════════
-// LOGIN — validación local con hash
+// CLAVE DE LOCALSTORAGE — por usuario y semana
+// ════════════════════════════════════════════════
+function weekKey(sede) {
+  return 'feed_pedido_' + sessionUsuario + '_' + isoDate(window._weekMonday) + '_' + sede;
+}
+
+// ════════════════════════════════════════════════
+// LOGIN
 // ════════════════════════════════════════════════
 async function doLogin() {
   const usuario = document.getElementById('input-usuario').value.trim();
@@ -883,17 +884,14 @@ async function doLogin() {
     errEl.style.display = 'block';
     return;
   }
-
   errEl.style.display = 'none';
 
-  // Calcular hash localmente con Web Crypto API
-  const encoder  = new TextEncoder();
-  const data     = encoder.encode(usuario + ':' + clave + ':' + SALT);
-  const hashBuf  = await crypto.subtle.digest('SHA-256', data);
-  const hashHex  = Array.from(new Uint8Array(hashBuf))
+  const encoder = new TextEncoder();
+  const data    = encoder.encode(usuario + ':' + clave + ':' + SALT);
+  const hashBuf = await crypto.subtle.digest('SHA-256', data);
+  const hashHex = Array.from(new Uint8Array(hashBuf))
     .map(b => b.toString(16).padStart(2, '0')).join('');
 
-  // Comparar con los hashes conocidos (nunca viaja la clave en texto plano)
   if (USUARIOS_HASH[usuario] && USUARIOS_HASH[usuario] === hashHex) {
     sessionUsuario   = usuario;
     sessionHashClave = hashHex;
@@ -910,7 +908,7 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display     = 'flex';
   init();
-  actualizarBannerPedido();
+  actualizarBannerYCards();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -919,7 +917,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === 'Enter') doLogin();
     });
   });
-  // Si ya hay sesión activa, entrar directo
   if (sessionUsuario && sessionHashClave && USUARIOS_HASH[sessionUsuario] === sessionHashClave) {
     showApp();
   }
@@ -929,37 +926,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // INIT
 // ════════════════════════════════════════════════
 function init() {
-  const now = new Date();
-  const ar  = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
-  const dow  = ar.getDay();  // 0=dom, 1=lun … 6=sáb
+  const now  = new Date();
+  const ar   = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
+  const dow  = ar.getDay();
   const hour = ar.getHours();
-
-  // Lógica:
-  // El pedido siempre corresponde a la semana que empieza en el PRÓXIMO lunes
-  // contado desde el lunes siguiente al día de hoy.
-  // Es decir: siempre mostramos el lunes que está a 2 semanas de distancia
-  // del lunes más cercano (o el lunes en 7 días si hoy es martes–lunes 15hs).
-  //
-  // Ventana válida para hacer el pedido: mar a lun 15hs
-  // Ejemplo: pedido semana 1/6 → se puede hacer mar 19/5 a lun 25/5 15hs
-  //
-  // Casos:
-  //  - Mar(2) a Dom(0): días hasta el próximo lunes = (8-dow)%7, luego +7 más
-  //  - Lun(1) antes 15hs: días hasta este lunes = 0, luego +7
-  //  - Lun(1) a las 15hs o después: plazo vencido → días hasta próximo lunes = 7, luego +7 más
 
   const deadlinePassed = (dow === 1 && hour >= 15);
 
-  // Primero calculamos cuántos días faltan para el lunes "base" (el más cercano)
-  let daysToThisMonday;
-  if (dow === 1) {
-    daysToThisMonday = 0; // hoy es lunes
-  } else {
-    daysToThisMonday = (8 - dow) % 7; // días hasta el próximo lunes
-  }
-
-  // La semana a mostrar empieza 7 días DESPUÉS de ese lunes base
-  // Si el plazo venció (lun ≥15hs), el lunes base ya "pasó" → sumamos 7 más
+  let daysToThisMonday = (dow === 1) ? 0 : (8 - dow) % 7;
   const daysToTargetMonday = daysToThisMonday + 7 + (deadlinePassed ? 7 : 0);
 
   const mon = new Date(ar);
@@ -974,47 +948,83 @@ function init() {
   document.getElementById('week-range').textContent =
     'Semana del ' + fmtDate(mon) + ' al ' + fmtDate(sun);
 
-  if (deadlinePassed) {
-    showDeadlineBanner();
-  }
+  if (deadlinePassed) showDeadlineBanner();
 }
 
 function showDeadlineBanner() {
-  // Insertar banner encima del selector de sedes
   const sedeCard = document.getElementById('step-sede');
+  if (document.querySelector('.deadline-passed-banner')) return;
   const banner = document.createElement('div');
   banner.className = 'deadline-passed-banner fade-in';
   banner.innerHTML = `
     <span class="dpb-icon">🔒</span>
-    <div>
-      <strong>El plazo de este lunes cerró a las 15:00 hs.</strong><br>
-      Ya podés cargar el pedido para la semana siguiente.
-    </div>`;
+    <div><strong>El plazo de este lunes cerró a las 15:00 hs.</strong><br>
+    Ya podés cargar el pedido para la semana siguiente.</div>`;
   sedeCard.parentNode.insertBefore(banner, sedeCard);
 }
 
 function fmtDate(d) {
   return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
 }
-
 function isoDate(d) {
   return d.toISOString().split('T')[0];
 }
 
 // ════════════════════════════════════════════════
-// INICIAR PEDIDO PARA UNA SEDE
+// BANNER Y ESTADO DE CARDS
+// ════════════════════════════════════════════════
+function actualizarBannerYCards() {
+  const pedidos = ['nordelta','madero']
+    .map(s => {
+      const data = localStorage.getItem(weekKey(s));
+      return data ? { sede: s, ...JSON.parse(data) } : null;
+    })
+    .filter(Boolean);
+
+  // Banner superior
+  const banner = document.getElementById('pedido-realizado-banner');
+  const texto  = document.getElementById('pedido-realizado-texto');
+
+  if (pedidos.length === 0) {
+    banner.style.display = 'none';
+  } else {
+    const lineas = pedidos.map(p =>
+      `<strong>${SEDE_LABELS[p.sede]}</strong> el ${p.fecha}`
+    ).join(' · ');
+    texto.innerHTML = pedidos.length === 1
+      ? `Ya hay un pedido realizado: ${lineas}`
+      : `Ya hay pedidos realizados: ${lineas}`;
+    banner.style.display = 'flex';
+  }
+
+  // Estado de cada card
+  ['nordelta','madero'].forEach(s => {
+    const card    = document.getElementById('card-' + s);
+    const hasPed  = !!localStorage.getItem(weekKey(s));
+    card.classList.toggle('has-pedido', hasPed);
+  });
+}
+
+// ════════════════════════════════════════════════
+// INICIAR PEDIDO
 // ════════════════════════════════════════════════
 function startOrder(sede) {
-  if (confirmed[sede]) return; // ya confirmada, no hacer nada
-
   currentSede   = sede;
   orderData     = {};
   deliveryDates = [];
+  isEditing     = !!localStorage.getItem(weekKey(sede));
 
-  // Mostrar sección de pedido
   document.getElementById('order-section').style.display = 'block';
   document.getElementById('order-sede-title').textContent = SEDE_LABELS[sede];
   document.getElementById('summary-title').textContent    = SEDE_LABELS[sede];
+
+  // Mostrar/ocultar strip de edición
+  const editStrip = document.getElementById('edit-strip');
+  editStrip.classList.toggle('visible', isEditing);
+
+  // Texto del botón según modo
+  document.getElementById('btn-submit').textContent =
+    isEditing ? 'Confirmar cambios' : 'Confirmar pedido';
 
   buildDayUI();
   hideError();
@@ -1026,7 +1036,7 @@ function startOrder(sede) {
 // BUILD DAY UI
 // ════════════════════════════════════════════════
 function buildDayUI() {
-  const monday     = window._weekMonday;
+  const monday      = window._weekMonday;
   const allowedDows = SEDE_DAYS[currentSede];
 
   for (let i = 0; i < 7; i++) {
@@ -1133,10 +1143,10 @@ function updateSummary() {
   if (!grid) return;
   grid.innerHTML = '';
   deliveryDates.forEach(d => {
-    const iso  = isoDate(d);
-    const dow  = d.getDay();
-    const has  = Object.values(orderData[iso]).some(q => q > 0);
-    const div  = document.createElement('div');
+    const iso = isoDate(d);
+    const dow = d.getDay();
+    const has = Object.values(orderData[iso]).some(q => q > 0);
+    const div = document.createElement('div');
     div.className = 's-day';
     let html = '<div class="s-day-name">' + DAY_SHORT[dow] + ' ' + d.getDate() + '</div>';
     if (!has) {
@@ -1172,7 +1182,7 @@ async function submitOrder() {
   const payload = {
     action: 'pedido',
     usuario: sessionUsuario,
-    hashClave: sessionHashClave,
+    esEdicion: isEditing,
     sede: SEDE_LABELS[currentSede],
     semana: document.getElementById('week-range').textContent,
     timestamp: new Date().toISOString(),
@@ -1198,65 +1208,33 @@ async function submitOrder() {
   } catch (err) {
     showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
     btn.disabled = false;
-    btn.innerHTML = 'Confirmar pedido';
+    btn.innerHTML = isEditing ? 'Confirmar cambios' : 'Confirmar pedido';
   }
 }
 
+// ════════════════════════════════════════════════
+// ÉXITO
+// ════════════════════════════════════════════════
 function onOrderSuccess() {
-  confirmed[currentSede] = true;
-
-  // Guardar en localStorage: clave = semana, valor = {sede, fecha}
-  const weekKey = 'feed_pedido_' + isoDate(window._weekMonday);
-  const existing = JSON.parse(localStorage.getItem(weekKey) || '[]');
+  // Guardar en localStorage con clave por usuario
   const fechaHoy = new Date().toLocaleDateString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     timeZone: 'America/Argentina/Buenos_Aires'
   });
-  if (!existing.find(e => e.sede === SEDE_LABELS[currentSede])) {
-    existing.push({ sede: SEDE_LABELS[currentSede], fecha: fechaHoy });
-  }
-  localStorage.setItem(weekKey, JSON.stringify(existing));
+  localStorage.setItem(weekKey(currentSede), JSON.stringify({ fecha: fechaHoy }));
 
-  // Mostrar pantalla de éxito
+  // Pantalla de éxito
+  document.getElementById('success-title').textContent =
+    isEditing ? '¡Pedido actualizado!' : '¡Pedido confirmado!';
+  document.getElementById('success-msg').textContent =
+    isEditing
+      ? 'Los cambios fueron registrados. El equipo de planificación recibió un aviso con el pedido actualizado.'
+      : 'El pedido fue registrado correctamente. Nuestro equipo ya recibió la notificación y lo está procesando.';
+
   document.getElementById('app-container').style.display  = 'none';
   document.getElementById('success-screen').style.display = 'block';
   document.getElementById('success-sede-label').textContent = SEDE_LABELS[currentSede];
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ════════════════════════════════════════════════
-// BANNER PEDIDO REALIZADO
-// ════════════════════════════════════════════════
-function actualizarBannerPedido() {
-  const weekKey  = 'feed_pedido_' + isoDate(window._weekMonday);
-  const pedidos  = JSON.parse(localStorage.getItem(weekKey) || '[]');
-  const banner   = document.getElementById('pedido-realizado-banner');
-  const texto    = document.getElementById('pedido-realizado-texto');
-
-  if (pedidos.length === 0) {
-    banner.style.display = 'none';
-    return;
-  }
-
-  // Armar texto según cuántos pedidos hay
-  const lineas = pedidos.map(p =>
-    `<strong>${p.sede}</strong> el ${p.fecha}`
-  ).join(' · ');
-
-  texto.innerHTML = pedidos.length === 1
-    ? `Ya hay un pedido realizado: ${lineas}`
-    : `Ya hay pedidos realizados: ${lineas}`;
-
-  banner.style.display = 'flex';
-
-  // También marcar las cards como done
-  pedidos.forEach(p => {
-    const sede = Object.keys(SEDE_LABELS).find(k => SEDE_LABELS[k] === p.sede);
-    if (sede) {
-      confirmed[sede] = true;
-      document.getElementById('card-' + sede).classList.add('done');
-    }
-  });
 }
 
 // ════════════════════════════════════════════════
@@ -1270,12 +1248,13 @@ function backToHome() {
   currentSede   = null;
   orderData     = {};
   deliveryDates = [];
+  isEditing     = false;
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = false;
-  btn.innerHTML = 'Confirmar pedido';
+  btn.textContent = 'Confirmar pedido';
 
-  actualizarBannerPedido();
+  actualizarBannerYCards();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1284,7 +1263,6 @@ function showError(msg) {
   el.textContent = msg;
   el.style.display = 'block';
 }
-
 function hideError() {
   document.getElementById('error-msg').style.display = 'none';
 }
@@ -1293,6 +1271,5 @@ init();
 </script>
 
 </div><!-- /main-app -->
-
 </body>
 </html>
