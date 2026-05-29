@@ -826,7 +826,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbws0chhe0kY6RBIySSCQHP1RM5XG7BWezlEbLQW8UJVxNjy60sM_HZB9c2aFr2HcQblmg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEBxRVvDe1xlu4_yZcADRbCmA3hSoFLqXg973NW_dzqEBNfkZkrNEmIlPi5ZOQjfUUnw/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -908,7 +908,7 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display     = 'flex';
   init();
-  actualizarBannerYCards();
+  cargarEstadoDesdeServidor();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -971,19 +971,46 @@ function isoDate(d) {
 }
 
 // ════════════════════════════════════════════════
+// ESTADO DESDE SERVIDOR
+// ════════════════════════════════════════════════
+
+// Cache en memoria de los pedidos del servidor (para esta sesión)
+let pedidosServidor = { nordelta: null, madero: null };
+
+async function cargarEstadoDesdeServidor() {
+  const semana = document.getElementById('week-range').textContent;
+  const sedes  = ['nordelta', 'madero'];
+
+  // Consultar ambas sedes en paralelo
+  await Promise.all(sedes.map(async sede => {
+    try {
+      const url = APPS_SCRIPT_URL
+        + '?usuario=' + encodeURIComponent(sessionUsuario)
+        + '&semana='  + encodeURIComponent(semana)
+        + '&sede='    + encodeURIComponent(SEDE_LABELS[sede]);
+      const res  = await fetch(url);
+      const json = await res.json();
+      if (json.status === 'ok' && json.pedido) {
+        pedidosServidor[sede] = json.pedido;
+      }
+    } catch(e) {
+      // Si falla la consulta, seguimos sin datos previos
+    }
+  }));
+
+  actualizarBannerYCards();
+}
+
+// ════════════════════════════════════════════════
 // BANNER Y ESTADO DE CARDS
 // ════════════════════════════════════════════════
 function actualizarBannerYCards() {
-  const pedidos = ['nordelta','madero']
-    .map(s => {
-      const data = localStorage.getItem(weekKey(s));
-      return data ? { sede: s, ...JSON.parse(data) } : null;
-    })
-    .filter(Boolean);
-
-  // Banner superior
   const banner = document.getElementById('pedido-realizado-banner');
   const texto  = document.getElementById('pedido-realizado-texto');
+
+  const pedidos = Object.entries(pedidosServidor)
+    .filter(([, v]) => v !== null)
+    .map(([sede, v]) => ({ sede, fecha: v.fecha }));
 
   if (pedidos.length === 0) {
     banner.style.display = 'none';
@@ -997,11 +1024,9 @@ function actualizarBannerYCards() {
     banner.style.display = 'flex';
   }
 
-  // Estado de cada card
   ['nordelta','madero'].forEach(s => {
-    const card    = document.getElementById('card-' + s);
-    const hasPed  = !!localStorage.getItem(weekKey(s));
-    card.classList.toggle('has-pedido', hasPed);
+    document.getElementById('card-' + s)
+      .classList.toggle('has-pedido', pedidosServidor[s] !== null);
   });
 }
 
@@ -1012,7 +1037,7 @@ function startOrder(sede) {
   currentSede   = sede;
   orderData     = {};
   deliveryDates = [];
-  isEditing     = !!localStorage.getItem(weekKey(sede));
+  isEditing     = pedidosServidor[sede] !== null;
 
   document.getElementById('order-section').style.display = 'block';
   document.getElementById('order-sede-title').textContent = SEDE_LABELS[sede];
@@ -1101,6 +1126,23 @@ function buildDayUI() {
   });
 
   updateSummary();
+
+  // Si es edición, cargar los valores del pedido anterior desde el servidor
+  if (isEditing && pedidosServidor[currentSede] && pedidosServidor[currentSede].dias) {
+    pedidosServidor[currentSede].dias.forEach(dia => {
+      dia.productos.forEach(prod => {
+        if (prod.cantidad > 0) {
+          const input = document.getElementById('qty-' + dia.fecha + '-' + prod.codigo);
+          if (input) {
+            input.value = prod.cantidad;
+            if (orderData[dia.fecha]) orderData[dia.fecha][prod.codigo] = prod.cantidad;
+          }
+          refreshDot(dia.fecha);
+        }
+      });
+    });
+    updateSummary();
+  }
 }
 
 function switchDay(iso) {
@@ -1216,12 +1258,22 @@ async function submitOrder() {
 // ÉXITO
 // ════════════════════════════════════════════════
 function onOrderSuccess() {
-  // Guardar en localStorage con clave por usuario
   const fechaHoy = new Date().toLocaleDateString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     timeZone: 'America/Argentina/Buenos_Aires'
   });
-  localStorage.setItem(weekKey(currentSede), JSON.stringify({ fecha: fechaHoy }));
+
+  // Actualizar cache en memoria con el pedido recién enviado
+  pedidosServidor[currentSede] = {
+    fecha: fechaHoy,
+    dias: deliveryDates.map(d => ({
+      fecha: isoDate(d),
+      dia: DAY_NAMES[d.getDay()],
+      productos: PRODUCTS
+        .map(p => ({ codigo: p.code, nombre: p.name, cantidad: orderData[isoDate(d)][p.code] || 0 }))
+        .filter(p => p.cantidad > 0),
+    })).filter(d => d.productos.length > 0),
+  };
 
   // Pantalla de éxito
   document.getElementById('success-title').textContent =
