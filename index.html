@@ -826,7 +826,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzrhMZx0eSgxp63fThZfHbmTXhe2QOFG_chdI7hHy8O2jCcDJXYUwG3AezfKu7yL7qqNQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEBxRVvDe1xlu4_yZcADRbCmA3hSoFLqXg973NW_dzqEBNfkZkrNEmIlPi5ZOQjfUUnw/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
@@ -978,16 +978,26 @@ function isoDate(d) {
 let pedidosServidor = { nordelta: null, madero: null };
 
 async function cargarEstadoDesdeServidor() {
-  const semana = document.getElementById('week-range').textContent;
-  const sedes  = ['nordelta', 'madero'];
+  const sedes = ['nordelta', 'madero'];
 
-  // Consultar ambas sedes en paralelo
   await Promise.all(sedes.map(async sede => {
     try {
+      // Calcular las fechas de entrega para esta sede
+      const allowedDows = SEDE_DAYS[sede];
+      const fechas = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(window._weekMonday);
+        d.setDate(window._weekMonday.getDate() + i);
+        if (allowedDows.includes(d.getDay())) {
+          fechas.push(isoDate(d));
+        }
+      }
+
       const url = APPS_SCRIPT_URL
         + '?usuario=' + encodeURIComponent(sessionUsuario)
-        + '&semana='  + encodeURIComponent(semana)
-        + '&sede='    + encodeURIComponent(SEDE_LABELS[sede]);
+        + '&sede='    + encodeURIComponent(SEDE_LABELS[sede])
+        + '&fechas='  + encodeURIComponent(fechas.join(','));
+
       const res  = await fetch(url);
       const json = await res.json();
       if (json.status === 'ok' && json.pedido) {
