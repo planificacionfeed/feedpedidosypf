@@ -102,6 +102,22 @@
     table.ptable td.code { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--ink-soft); }
     table.ptable td:last-child { text-align: center; }
 
+    /* ── CATEGORY CHIPS ── */
+    .cat-chip {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .cat-Ensalada { background: #5BBF6A; color: #fff; }
+    .cat-Bowl     { background: #F5C518; color: #1D1D1B; }
+    .cat-Platos   { background: #8B6347; color: #fff; }
+    .cat-Sopa     { background: #F4A0B0; color: #1D1D1B; }
+
     /* QTY */
     .qty-wrap { display: inline-flex; align-items: center; border: 1.5px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--white); }
     .qty-btn { width: 34px; height: 34px; border: none; background: var(--cream); font-size: 1.1rem; cursor: pointer; color: var(--ink); display: flex; align-items: center; justify-content: center; transition: background .12s; }
@@ -454,13 +470,13 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBUuq_ynV3Z8ARNgoIzioHhGf-qIsmSYmX4p6kbSBPARUZfFDG7dCge3nFyoXsjccVuA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgxygu02KaPsb8poGrJCsO-bfgGaH4J-s2CeLBEGkOqgG1b42CLFn_7B47AWl__DXdpw/exec';
 
 const PRODUCTS = [
-  { code: 'PFEN00010', name: 'Ensalada Peras y queso azul' },
-  { code: 'PFEN00005', name: 'Ensalada Tuna' },
-  { code: 'PFPW00239', name: 'Chicken pesto bowl YPF' },
-  { code: 'PFPW00238', name: 'Cob bowl YPF' },
+  { code: 'PFEN00010', name: 'Ensalada Peras y queso azul', categoria: 'Ensalada' },
+  { code: 'PFEN00005', name: 'Ensalada Tuna',               categoria: 'Ensalada' },
+  { code: 'PFPW00239', name: 'Chicken pesto bowl YPF',      categoria: 'Bowl'     },
+  { code: 'PFPW00238', name: 'Cob bowl YPF',                categoria: 'Bowl'     },
 ];
 
 const SEDE_DAYS = { nordelta: [1,3,5,0], madero: [1,2,3,4,5] };
@@ -568,8 +584,9 @@ function renderAdminPanel(sede) {
     row.id = 'prow-' + sede + '-' + p.code;
     row.innerHTML = `
       <div class="product-info">
-        <span class="p-code">${p.code}</span>
+        <span class="cat-chip cat-${p.categoria}" style="margin-bottom:4px">${p.code}</span>
         <span class="p-name">${p.name}</span>
+        <span style="font-size:0.72rem;color:var(--ink-soft);margin-top:2px">${p.categoria}</span>
       </div>
       <div class="toggle-wrap">
         <span class="toggle-label ${activo ? 'on' : ''}" id="tlabel-${sede}-${p.code}">${activo ? 'Activo' : 'Inactivo'}</span>
@@ -786,7 +803,9 @@ function buildDayUI() {
 
     const rows = activeProds.map(p => `
       <tr>
-        <td class="code">${p.code}</td>
+        <td class="code">
+          <span class="cat-chip cat-${p.categoria}">${p.code}</span>
+        </td>
         <td>${p.name}</td>
         <td>
           <div class="qty-wrap">
