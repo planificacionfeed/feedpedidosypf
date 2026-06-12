@@ -337,6 +337,7 @@
       <div class="admin-sede-tabs">
         <button class="admin-sede-tab active" onclick="switchAdminTab('nordelta')">YPF Nordelta</button>
         <button class="admin-sede-tab" onclick="switchAdminTab('madero')">YPF Madero</button>
+        <button class="admin-sede-tab" onclick="switchAdminTab('alcorta')">YPF Alcorta</button>        
       </div>
 
       <!-- Panel Nordelta -->
@@ -347,6 +348,18 @@
           <div style="display:flex;align-items:center;gap:16px">
             <span class="admin-save-ok" id="save-ok-nordelta">✓ Guardado</span>
             <button class="btn-admin-save" onclick="guardarCatalogo('nordelta')">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Alcorta -->
+      <div class="admin-panel active" id="admin-panel-alcorta">
+        <div id="product-list-alcorta"></div>
+        <div class="admin-save-row">
+          <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="admin-save-ok" id="save-ok-alcorta">✓ Guardado</span>
+            <button class="btn-admin-save" onclick="guardarCatalogo('alcorta')">Guardar cambios</button>
           </div>
         </div>
       </div>
@@ -517,7 +530,7 @@ const USUARIO_SEDES = {
 };
 
 function getSedesPermitidas() {
-  return USUARIO_SEDES[sessionUsuario] || ['nordelta', 'madero'];
+  return USUARIO_SEDES[sessionUsuario] || ['nordelta', 'madero','alcorta'];
 }
 
 // ── ESTADO ──
@@ -529,9 +542,9 @@ let sessionUsuario   = sessionStorage.getItem('feed_usuario') || null;
 let sessionHashClave = sessionStorage.getItem('feed_hash')    || null;
 
 // Catálogo activo por sede (cargado desde servidor)
-let catalogoActivo = { nordelta: null, madero: null };
+let catalogoActivo = { nordelta: null, madero: null, alcorta: null };
 // Estado toggles en el admin (antes de guardar)
-let adminToggles = { nordelta: {}, madero: {} };
+let adminToggles = { nordelta: {}, madero: {}, alcorta: {} };
 
 // ════════════════════════════════════════════════
 // LOGIN
@@ -582,7 +595,7 @@ async function showAdmin() {
   document.getElementById('admin-screen').style.display = 'flex';
 
   // Cargar catálogos actuales del servidor para ambas sedes
-  await Promise.all(['nordelta','madero'].map(async sede => {
+  await Promise.all(['nordelta','madero', 'alcorta'].map(async sede => {
     try {
       const url = APPS_SCRIPT_URL + '?action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]);
       const res  = await fetch(url);
@@ -599,6 +612,7 @@ async function showAdmin() {
 
   renderAdminPanel('nordelta');
   renderAdminPanel('madero');
+  renderAdminPanel('alcorta');
 }
 
 function renderAdminPanel(sede) {
@@ -678,7 +692,7 @@ function showApp() {
 
   // Mostrar solo las sedes permitidas para este usuario
   const permitidas = getSedesPermitidas();
-  ['nordelta', 'madero'].forEach(s => {
+  ['nordelta', 'madero', 'alcorta'].forEach(s => {
     document.getElementById('card-' + s).style.display = permitidas.includes(s) ? '' : 'none';
   });
   // Si solo hay una sede visible, usar layout de una columna
@@ -724,7 +738,7 @@ function isoDate(d) { return d.toISOString().split('T')[0]; }
 // ════════════════════════════════════════════════
 // ESTADO DESDE SERVIDOR (pedidos + catálogo activo)
 // ════════════════════════════════════════════════
-let pedidosServidor = { nordelta: null, madero: null };
+let pedidosServidor = { nordelta: null, madero: null, alcorta: null };
 
 async function cargarEstadoDesdeServidor() {
   // Solo cargar las sedes a las que el usuario tiene acceso
