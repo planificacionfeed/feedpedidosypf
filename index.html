@@ -418,6 +418,13 @@
         <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
         <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
       </div>
+      <div class="sede-card" id="card-alcorta" onclick="startOrder('alcorta')">
+        <div class="sede-check">✓</div>
+        <div class="sede-name">YPF Figueroa Alcorta</div>
+        <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
+      </div>
     </div>
   </div>
 
@@ -471,7 +478,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRraOag8G6A63G8AKgTbpwe9G-KAi05wVD-qm9nhTCjdX8Ghl1DVGTjBwijso2yKxVbw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxWth8XrvXVxgdSfCRXGin_p8KsfRJLm2MiLciJ6tKbhagYulqzzJtRPNyBWDpgn2w3A/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00001', name: 'Ensalada Caesar', categoria: 'Ensalada' },
@@ -486,8 +493,8 @@ const PRODUCTS = [
   { code: 'PFPW00271', name: 'Sopa de choclo', categoria: 'Sopa'}  
 ];
 
-const SEDE_DAYS = { nordelta: [1,2,3,4,5,6,0], madero: [1,2,3,4,5,6,0] };
-const SEDE_LABELS = { nordelta: 'YPF Nordelta', madero: 'YPF Madero' };
+const SEDE_DAYS = { nordelta: [1,2,3,4,5,6,0], madero: [1,2,3,4,5,6,0], alcorta: [1,2,3,4,5,6,0] };
+const SEDE_LABELS = { nordelta: 'YPF Nordelta', madero: 'YPF Madero', alcorta: "YPF Alcorta" };
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
@@ -497,6 +504,7 @@ const USUARIOS_HASH = {
   'ypfmadero':   'ca78688ce87f65814690b26a33a0b28f974d88273455754693db228d3c4bc32e',
   'feedpruebas': '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877',
   'admin':       '3ca4beea159b96d5d04c5e723f682c32672521bc9344920bbbb23023afc46e62',
+  'ypfalcorta':   'ff5ef73e6dabce4ecda61f4479ec546e2524cf071e72c550523225ea9b3b98c1'
 };
 const SALT = 'feed_salt_2025';
 
@@ -505,6 +513,7 @@ const SALT = 'feed_salt_2025';
 const USUARIO_SEDES = {
   'ypfnordelta': ['nordelta'],
   'ypfmadero':   ['madero'],
+  'ypfalcorta':   ['alcorta']
 };
 
 function getSedesPermitidas() {
