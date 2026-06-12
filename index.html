@@ -50,6 +50,7 @@
 
     /* SEDE SELECTOR */
     .sede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .sede-grid.single-sede { grid-template-columns: 1fr; max-width: 380px; }
     .sede-card { border: 1.5px solid var(--line); border-radius: var(--radius); padding: 22px 24px; cursor: pointer; transition: border-color .18s, background .18s; background: var(--cream); position: relative; display: block; }
     .sede-card:hover { border-color: var(--accent2); background: var(--cream-dk); }
     .sede-card.has-pedido { border-color: var(--ok-br); background: var(--ok-bg); }
@@ -400,7 +401,7 @@
   <div class="card fade-in" id="step-sede">
     <div class="card-label">Seleccioná una sede</div>
     <h2>¿Para qué sede es el pedido?</h2>
-    <div class="sede-grid">
+    <div class="sede-grid" id="sede-grid">
       <div class="sede-card" id="card-nordelta" onclick="startOrder('nordelta')">
         <div class="sede-check">✓</div>
         <div class="sede-name">YPF Nordelta</div>
@@ -470,7 +471,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBUuq_ynV3Z8ARNgoIzioHhGf-qIsmSYmX4p6kbSBPARUZfFDG7dCge3nFyoXsjccVuA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOAACLFbwJjZmFcq97HAQagjt2zAl5oj2312ZryBATrYP1XXkNkCy9WHXeD1fcnmAj/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00001', name: 'Ensalada Caesar', categoria: 'Ensalada' },
@@ -492,11 +493,23 @@ const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
 // ── USUARIOS ──
 const USUARIOS_HASH = {
-  'ypfpedidos':  'ea6c725eb4362ba7f81dc2bc0033b006a292145302b8df86232108d661231928',
+  'ypfnordelta': '811e0aff9691ead263abb1cf4a5643385da2493b9ed2290efbb4dc30aff8faac',
+  'ypfmadero':   'ca78688ce87f65814690b26a33a0b28f974d88273455754693db228d3c4bc32e',
   'feedpruebas': '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877',
   'admin':       '3ca4beea159b96d5d04c5e723f682c32672521bc9344920bbbb23023afc46e62',
 };
 const SALT = 'feed_salt_2025';
+
+// ── SEDES PERMITIDAS POR USUARIO ──
+// Si el usuario no está en este mapa, puede ver todas las sedes.
+const USUARIO_SEDES = {
+  'ypfnordelta': ['nordelta'],
+  'ypfmadero':   ['madero'],
+};
+
+function getSedesPermitidas() {
+  return USUARIO_SEDES[sessionUsuario] || ['nordelta', 'madero'];
+}
 
 // ── ESTADO ──
 let currentSede   = null;
@@ -565,7 +578,6 @@ async function showAdmin() {
       const url = APPS_SCRIPT_URL + '?action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]);
       const res  = await fetch(url);
       const json = await res.json();
-      // json.catalogo = array de codes activos, o null = todos activos
       catalogoActivo[sede] = json.catalogo || PRODUCTS.map(p => p.code);
     } catch(e) {
       catalogoActivo[sede] = PRODUCTS.map(p => p.code);
@@ -654,6 +666,16 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display     = 'flex';
   init();
+
+  // Mostrar solo las sedes permitidas para este usuario
+  const permitidas = getSedesPermitidas();
+  ['nordelta', 'madero'].forEach(s => {
+    document.getElementById('card-' + s).style.display = permitidas.includes(s) ? '' : 'none';
+  });
+  // Si solo hay una sede visible, usar layout de una columna
+  const grid = document.getElementById('sede-grid');
+  grid.classList.toggle('single-sede', permitidas.length === 1);
+
   cargarEstadoDesdeServidor();
 }
 
@@ -696,9 +718,10 @@ function isoDate(d) { return d.toISOString().split('T')[0]; }
 let pedidosServidor = { nordelta: null, madero: null };
 
 async function cargarEstadoDesdeServidor() {
-  const sedes = ['nordelta','madero'];
+  // Solo cargar las sedes a las que el usuario tiene acceso
+  const permitidas = getSedesPermitidas();
 
-  await Promise.all(sedes.map(async sede => {
+  await Promise.all(permitidas.map(async sede => {
     try {
       const allowedDows = SEDE_DAYS[sede];
       const fechas = [];
@@ -714,7 +737,6 @@ async function cargarEstadoDesdeServidor() {
       const res  = await fetch(url);
       const json = await res.json();
       if (json.status === 'ok' && json.pedido) pedidosServidor[sede] = json.pedido;
-      // Guardar catálogo activo
       catalogoActivo[sede] = json.catalogo || PRODUCTS.map(p => p.code);
     } catch(e) {
       catalogoActivo[sede] = PRODUCTS.map(p => p.code);
@@ -730,7 +752,10 @@ async function cargarEstadoDesdeServidor() {
 function actualizarBannerYCards() {
   const banner = document.getElementById('pedido-realizado-banner');
   const texto  = document.getElementById('pedido-realizado-texto');
-  const pedidos = Object.entries(pedidosServidor).filter(([,v]) => v !== null).map(([sede,v]) => ({ sede, fecha: v.fecha }));
+  const permitidas = getSedesPermitidas();
+  const pedidos = Object.entries(pedidosServidor)
+    .filter(([sede, v]) => v !== null && permitidas.includes(sede))
+    .map(([sede, v]) => ({ sede, fecha: v.fecha }));
   if (pedidos.length === 0) {
     banner.style.display = 'none';
   } else {
@@ -738,7 +763,8 @@ function actualizarBannerYCards() {
     texto.innerHTML = pedidos.length === 1 ? `Ya hay un pedido realizado: ${lineas}` : `Ya hay pedidos realizados: ${lineas}`;
     banner.style.display = 'flex';
   }
-  ['nordelta','madero'].forEach(s => {
+  // Solo actualizar las cards visibles
+  permitidas.forEach(s => {
     document.getElementById('card-' + s).classList.toggle('has-pedido', pedidosServidor[s] !== null);
   });
 }
