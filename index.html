@@ -207,7 +207,7 @@
     .admin-container { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; flex: 1; }
 
     /* Tabs de sede dentro del admin */
-    .admin-sede-tabs { display: flex; gap: 0; border-bottom: 1.5px solid var(--line); margin-bottom: 24px; }
+    .admin-sede-tabs { display: flex; gap: 0; border-bottom: 1.5px solid var(--line); margin-bottom: 24px; flex-wrap: wrap; }
     .admin-sede-tab { padding: 10px 28px 13px; border: none; border-bottom: 3px solid transparent; background: transparent; font-size: 0.88rem; font-weight: 700; font-family: 'Lato', sans-serif; cursor: pointer; color: var(--ink-soft); margin-bottom: -1.5px; transition: color .15s; letter-spacing: 0.3px; }
     .admin-sede-tab:hover { color: var(--ink); }
     .admin-sede-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
@@ -337,7 +337,8 @@
       <div class="admin-sede-tabs">
         <button class="admin-sede-tab active" onclick="switchAdminTab('nordelta')">YPF Nordelta</button>
         <button class="admin-sede-tab" onclick="switchAdminTab('madero')">YPF Madero</button>
-        <button class="admin-sede-tab" onclick="switchAdminTab('alcorta')">YPF Alcorta</button>        
+        <button class="admin-sede-tab" onclick="switchAdminTab('alcorta')">YPF Alcorta</button>
+        <button class="admin-sede-tab" onclick="switchAdminTab('ugarte')">YPF Ugarte</button>
       </div>
 
       <!-- Panel Nordelta -->
@@ -353,7 +354,7 @@
       </div>
 
       <!-- Panel Alcorta -->
-      <div class="admin-panel active" id="admin-panel-alcorta">
+      <div class="admin-panel" id="admin-panel-alcorta">
         <div id="product-list-alcorta"></div>
         <div class="admin-save-row">
           <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
@@ -372,6 +373,18 @@
           <div style="display:flex;align-items:center;gap:16px">
             <span class="admin-save-ok" id="save-ok-madero">✓ Guardado</span>
             <button class="btn-admin-save" onclick="guardarCatalogo('madero')">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Ugarte -->
+      <div class="admin-panel" id="admin-panel-ugarte">
+        <div id="product-list-ugarte"></div>
+        <div class="admin-save-row">
+          <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="admin-save-ok" id="save-ok-ugarte">✓ Guardado</span>
+            <button class="btn-admin-save" onclick="guardarCatalogo('ugarte')">Guardar cambios</button>
           </div>
         </div>
       </div>
@@ -436,6 +449,13 @@
         <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
         <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
       </div>
+      <div class="sede-card" id="card-ugarte" onclick="startOrder('ugarte')">
+        <div class="sede-check">✓</div>
+        <div class="sede-name">YPF Ugarte</div>
+        <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
+      </div>
     </div>
   </div>
 
@@ -489,7 +509,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVH28bhyVnnN9vIX_a87kAx_JasSAr7MSebqTVV6xgIq6I-HdxAKuW5ivWLsQ7MkWaPQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZhKkA6hU-dyynu_U1JiDtIGSiiiBU1m3Vv32WsYGDP-H5CTrMZxW4--z6XyCs65hW/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00001', name: 'Ensalada Caesar', categoria: 'Ensalada' },
@@ -504,8 +524,8 @@ const PRODUCTS = [
   { code: 'PFPW00271', name: 'Sopa de choclo', categoria: 'Sopa'}  
 ];
 
-const SEDE_DAYS = { nordelta: [1,3,5,0], madero: [1,2,3,4,5], alcorta: [1,3,5,0] };
-const SEDE_LABELS = { nordelta: 'YPF Nordelta', madero: 'YPF Madero', alcorta: "YPF Alcorta" };
+const SEDE_DAYS = { nordelta: [1,3,5,0], madero: [1,2,3,4,5], alcorta: [1,3,5,0], ugarte: [1,3,5,0] };
+const SEDE_LABELS = { nordelta: 'YPF Nordelta', madero: 'YPF Madero', alcorta: "YPF Alcorta", ugarte: "YPF Ugarte" };
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
@@ -515,7 +535,8 @@ const USUARIOS_HASH = {
   'ypfmadero':   'ca78688ce87f65814690b26a33a0b28f974d88273455754693db228d3c4bc32e',
   'feedpruebas': '5974e0ddef1da67abe94e2a7505230e57e3b23f1d16c5542630dddd670151877',
   'admin':       '3ca4beea159b96d5d04c5e723f682c32672521bc9344920bbbb23023afc46e62',
-  'ypfalcorta':   'ff5ef73e6dabce4ecda61f4479ec546e2524cf071e72c550523225ea9b3b98c1'
+  'ypfalcorta':   'ff5ef73e6dabce4ecda61f4479ec546e2524cf071e72c550523225ea9b3b98c1',
+  'ypfugarte':   'feac38effff5185abd4791ed0132c21ae59ce072318c50a46ff597d562b30ecd'
 };
 const SALT = 'feed_salt_2025';
 
@@ -524,11 +545,12 @@ const SALT = 'feed_salt_2025';
 const USUARIO_SEDES = {
   'ypfnordelta': ['nordelta'],
   'ypfmadero':   ['madero'],
-  'ypfalcorta':   ['alcorta']
+  'ypfalcorta':   ['alcorta'],
+  'ypfugarte':   ['ugarte']
 };
 
 function getSedesPermitidas() {
-  return USUARIO_SEDES[sessionUsuario] || ['nordelta', 'madero','alcorta'];
+  return USUARIO_SEDES[sessionUsuario] || ['nordelta', 'madero', 'alcorta', 'ugarte'];
 }
 
 // ── ESTADO ──
@@ -540,9 +562,9 @@ let sessionUsuario   = sessionStorage.getItem('feed_usuario') || null;
 let sessionHashClave = sessionStorage.getItem('feed_hash')    || null;
 
 // Catálogo activo por sede (cargado desde servidor)
-let catalogoActivo = { nordelta: null, madero: null, alcorta: null };
+let catalogoActivo = { nordelta: null, madero: null, alcorta: null, ugarte: null };
 // Estado toggles en el admin (antes de guardar)
-let adminToggles = { nordelta: {}, madero: {}, alcorta: {} };
+let adminToggles = { nordelta: {}, madero: {}, alcorta: {}, ugarte: {} };
 
 // ════════════════════════════════════════════════
 // LOGIN
@@ -592,8 +614,8 @@ async function showAdmin() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-screen').style.display = 'flex';
 
-  // Cargar catálogos actuales del servidor para ambas sedes
-  await Promise.all(['nordelta','madero', 'alcorta'].map(async sede => {
+  // Cargar catálogos actuales del servidor para todas las sedes
+  await Promise.all(['nordelta','madero', 'alcorta', 'ugarte'].map(async sede => {
     try {
       const url = APPS_SCRIPT_URL + '?action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]);
       const res  = await fetch(url);
@@ -611,6 +633,7 @@ async function showAdmin() {
   renderAdminPanel('nordelta');
   renderAdminPanel('madero');
   renderAdminPanel('alcorta');
+  renderAdminPanel('ugarte');
 }
 
 function renderAdminPanel(sede) {
@@ -690,7 +713,7 @@ function showApp() {
 
   // Mostrar solo las sedes permitidas para este usuario
   const permitidas = getSedesPermitidas();
-  ['nordelta', 'madero', 'alcorta'].forEach(s => {
+  ['nordelta', 'madero', 'alcorta', 'ugarte'].forEach(s => {
     document.getElementById('card-' + s).style.display = permitidas.includes(s) ? '' : 'none';
   });
   // Si solo hay una sede visible, usar layout de una columna
@@ -736,7 +759,7 @@ function isoDate(d) { return d.toISOString().split('T')[0]; }
 // ════════════════════════════════════════════════
 // ESTADO DESDE SERVIDOR (pedidos + catálogo activo)
 // ════════════════════════════════════════════════
-let pedidosServidor = { nordelta: null, madero: null, alcorta: null };
+let pedidosServidor = { nordelta: null, madero: null, alcorta: null, ugarte: null };
 
 async function cargarEstadoDesdeServidor() {
   // Solo cargar las sedes a las que el usuario tiene acceso
