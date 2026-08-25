@@ -1625,8 +1625,8 @@ function getCutoffAjusteJS(fechaEntregaIso, categoria, codigo) {
   }
   if (categoria === 'Bowl' || categoria === 'Ensalada') {
     const dow = fechaEntrega.getDay();
-    if (dow !== 4 && dow !== 5) return null;
-    const diasARestar = (dow === 4) ? 1 : 2;
+    if (dow !== 4 && dow !== 5 && dow !== 6 && dow !== 0) return null;
+    const diasARestar = (dow === 0) ? 4 : (dow === 4 ? 1 : 2);
     const diaCorte = new Date(fechaEntrega);
     diaCorte.setDate(fechaEntrega.getDate() - diasARestar);
     diaCorte.setHours(10, 0, 0, 0);
