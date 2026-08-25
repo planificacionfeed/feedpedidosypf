@@ -672,7 +672,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqtX_B4kHc8wrZ116KMcO_iWDA-g3c1ZYMd43t0jJzo0T6_gqg6CTDUsywGwGF_LMBHQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzf-FGHGlYO2yWODcFaA4lYXtT3j63zDVCyxSS-A9oLECxVTkx5ODgXA11mGDAgVruzlA/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00001', name: 'Ensalada Caesar', categoria: 'Ensalada' },
@@ -701,9 +701,59 @@ let sessionUsuario         = sessionStorage.getItem('feed_usuario') || null;
 let sessionCliente         = sessionStorage.getItem('feed_cliente') || null;
 let sessionTipoUsuario     = sessionStorage.getItem('feed_tipo')    || null;
 let sessionSedesPermitidas = JSON.parse(sessionStorage.getItem('feed_sedes') || '[]');
+// Token de sesión: lo genera el servidor al loguearse y se manda en cada
+// request. El usuario nunca lo ve. Sin token, el servidor rechaza todo.
+let sessionToken           = sessionStorage.getItem('feed_token')   || null;
 
 function getSedesPermitidas() {
   return sessionSedesPermitidas.length > 0 ? sessionSedesPermitidas : ['nordelta', 'madero', 'alcorta', 'ugarte'];
+}
+
+// ════════════════════════════════════════════════
+// HELPERS DE RED Y ESCAPE
+// ════════════════════════════════════════════════
+
+// Escapa texto que viene del servidor antes de meterlo en innerHTML.
+function escHtml(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Sesión vencida o inválida → volver al login.
+function sesionVencida() {
+  alert('Tu sesión venció. Volvé a ingresar.');
+  cerrarSesion();
+}
+
+// GET con token. Lanza si el servidor rechaza la sesión.
+async function getJson(params) {
+  const url = APPS_SCRIPT_URL + '?token=' + encodeURIComponent(sessionToken || '') + '&' + params;
+  const res  = await fetch(url);
+  const json = await res.json();
+  if (json && json.code === 'NO_AUTH') { sesionVencida(); throw new Error('NO_AUTH'); }
+  return json;
+}
+
+// POST con token. Usa text/plain (igual que el login) para evitar el preflight
+// CORS que Apps Script no responde — así se puede LEER la respuesta y saber si
+// realmente se guardó, en lugar de asumir que salió bien.
+async function postJson(payload) {
+  payload.token = sessionToken;
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json();
+  if (json && json.code === 'NO_AUTH') { sesionVencida(); throw new Error('NO_AUTH'); }
+  if (!json || json.status !== 'ok') {
+    throw new Error((json && json.message) || 'El servidor no confirmó la operación.');
+  }
+  return json;
 }
 
 // ── ESTADO ──
@@ -761,11 +811,13 @@ async function doLogin() {
       sessionCliente         = json.cliente;
       sessionTipoUsuario     = json.tipo_usuario;
       sessionSedesPermitidas = json.sedes_permitidas || [];
+      sessionToken           = json.token;
 
       sessionStorage.setItem('feed_usuario', sessionUsuario);
       sessionStorage.setItem('feed_cliente', sessionCliente || '');
       sessionStorage.setItem('feed_tipo',    sessionTipoUsuario || '');
       sessionStorage.setItem('feed_sedes',   JSON.stringify(sessionSedesPermitidas));
+      sessionStorage.setItem('feed_token',   sessionToken || '');
 
       if (sessionTipoUsuario === 'admin') {
         showAdmin();
@@ -773,7 +825,9 @@ async function doLogin() {
         showApp();
       }
     } else {
-      errEl.textContent = 'Usuario o contraseña incorrectos.';
+      // El servidor puede mandar un mensaje propio (ej. bloqueo por
+      // demasiados intentos fallidos).
+      errEl.textContent = json.message || 'Usuario o contraseña incorrectos.';
       errEl.style.display = 'block';
     }
   } catch (e) {
@@ -792,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Continuidad de sesión dentro de la misma pestaña (no revalida contra el
   // servidor en cada recarga; se cierra sola al cerrar la pestaña/navegador
   // porque usa sessionStorage).
-  if (sessionUsuario && sessionTipoUsuario) {
+  if (sessionToken && sessionUsuario && sessionTipoUsuario) {
     if (sessionTipoUsuario === 'admin') showAdmin(); else showApp();
   }
 });
@@ -807,9 +861,7 @@ async function showAdmin() {
   // Cargar catálogos actuales del servidor para todas las sedes
   await Promise.all(['nordelta','madero', 'alcorta', 'ugarte'].map(async sede => {
     try {
-      const url = APPS_SCRIPT_URL + '?action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]);
-      const res  = await fetch(url);
-      const json = await res.json();
+      const json = await getJson('action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]));
       catalogoActivo[sede] = json.catalogo || PRODUCTS.map(p => p.code);
     } catch(e) {
       catalogoActivo[sede] = PRODUCTS.map(p => p.code);
@@ -870,16 +922,11 @@ async function guardarCatalogo(sede) {
   const activeCodes = PRODUCTS.filter(p => adminToggles[sede][p.code]).map(p => p.code);
 
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'setCatalogo', sede: SEDE_LABELS[sede], catalogo: activeCodes }),
-    });
+    await postJson({ action: 'setCatalogo', sede: SEDE_LABELS[sede], catalogo: activeCodes });
     catalogoActivo[sede] = activeCodes;
     document.getElementById('save-ok-' + sede).style.display = 'inline';
   } catch(e) {
-    alert('Error al guardar. Intentá nuevamente.');
+    if (e.message !== 'NO_AUTH') alert('Error al guardar: ' + e.message);
   }
 
   btn.disabled = false;
@@ -1077,12 +1124,10 @@ async function cargarEstadoDesdeServidor() {
         d.setDate(window._weekMonday.getDate() + i);
         if (allowedDows.includes(d.getDay())) fechas.push(isoDate(d));
       }
-      const url = APPS_SCRIPT_URL
-        + '?usuario=' + encodeURIComponent(sessionUsuario)
-        + '&sede='    + encodeURIComponent(SEDE_LABELS[sede])
-        + '&fechas='  + encodeURIComponent(fechas.join(','));
-      const res  = await fetch(url);
-      const json = await res.json();
+      const json = await getJson(
+        'sede='    + encodeURIComponent(SEDE_LABELS[sede])
+        + '&fechas=' + encodeURIComponent(fechas.join(','))
+      );
       if (json.status === 'ok' && json.pedido) pedidosServidor[sede] = json.pedido;
       catalogoActivo[sede] = json.catalogo || PRODUCTS.map(p => p.code);
     } catch(e) {
@@ -1106,7 +1151,7 @@ function actualizarBannerYCards() {
   if (pedidos.length === 0) {
     banner.style.display = 'none';
   } else {
-    const lineas = pedidos.map(p => `<strong>${SEDE_LABELS[p.sede]}</strong> el ${p.fecha}`).join(' · ');
+    const lineas = pedidos.map(p => `<strong>${SEDE_LABELS[p.sede]}</strong> el ${escHtml(p.fecha)}`).join(' · ');
     texto.innerHTML = pedidos.length === 1 ? `Ya hay un pedido realizado: ${lineas}` : `Ya hay pedidos realizados: ${lineas}`;
     banner.style.display = 'flex';
   }
@@ -1311,22 +1356,23 @@ async function submitOrder() {
 
   const payload = {
     action: 'pedido',
-    usuario: sessionUsuario,
-    cliente: sessionCliente,
     esEdicion: isEditing,
     sede: SEDE_LABELS[currentSede],
-    semana: document.getElementById('week-range').textContent,
     timestamp: new Date().toISOString(),
     dias: diasPayload,
   };
+  // usuario, cliente y semana ya no se mandan: el servidor los toma de la
+  // sesión y calcula la semana a partir de las fechas.
 
   try {
-    await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    await postJson(payload);
     onOrderSuccess();
   } catch (err) {
-    showError('Hubo un error al enviar el pedido. Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
-    btn.disabled = false;
-    btn.innerHTML = isEditing ? 'Confirmar cambios' : 'Confirmar pedido';
+    if (err.message !== 'NO_AUTH') {
+      showError('No se pudo registrar el pedido (' + err.message + '). Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
+      btn.disabled = false;
+      btn.innerHTML = isEditing ? 'Confirmar cambios' : 'Confirmar pedido';
+    }
   }
 }
 
@@ -1370,11 +1416,8 @@ async function cargarSemanasMerma() {
   document.getElementById('step-merma-semana').style.display = 'block';
 
   try {
-    const url = APPS_SCRIPT_URL + '?action=getSemanasConPedido'
-      + '&usuario=' + encodeURIComponent(sessionUsuario)
-      + '&sede='    + encodeURIComponent(SEDE_LABELS[mermaSede]);
-    const res  = await fetch(url);
-    const json = await res.json();
+    const json = await getJson('action=getSemanasConPedido'
+      + '&sede=' + encodeURIComponent(SEDE_LABELS[mermaSede]));
     const semanas = json.semanas || [];
 
     if (semanas.length === 0) {
@@ -1387,7 +1430,7 @@ async function cargarSemanasMerma() {
       const div = document.createElement('div');
       div.className = 'semana-card';
       div.onclick = () => seleccionarSemanaMerma(s.lunes, s.etiqueta);
-      div.innerHTML = `<span class="semana-label">${s.etiqueta}</span><span class="semana-arrow">→</span>`;
+      div.innerHTML = `<span class="semana-label">${escHtml(s.etiqueta)}</span><span class="semana-arrow">→</span>`;
       grid.appendChild(div);
     });
   } catch (e) {
@@ -1411,12 +1454,9 @@ async function seleccionarSemanaMerma(lunesIso, etiqueta) {
   hideMermaError();
 
   try {
-    const url = APPS_SCRIPT_URL + '?action=getPedidoParaMerma'
-      + '&usuario=' + encodeURIComponent(sessionUsuario)
-      + '&sede='    + encodeURIComponent(SEDE_LABELS[mermaSede])
-      + '&lunes='   + encodeURIComponent(lunesIso);
-    const res  = await fetch(url);
-    const json = await res.json();
+    const json = await getJson('action=getPedidoParaMerma'
+      + '&sede='  + encodeURIComponent(SEDE_LABELS[mermaSede])
+      + '&lunes=' + encodeURIComponent(lunesIso));
     mermaDias = json.dias || [];
     buildMermaUI();
   } catch (e) {
@@ -1461,8 +1501,8 @@ function buildMermaUI() {
 
     const rows = dia.productos.map(p => `
       <tr>
-        <td>${p.nombre}</td>
-        <td class="cant-pedida">${p.cantidadPedida}</td>
+        <td>${escHtml(p.nombre)}</td>
+        <td class="cant-pedida">${escHtml(p.cantidadPedida)}</td>
         <td>
           <div class="qty-wrap merma-qty">
             <button class="qty-btn" onclick="changeMermaQty('${iso}','${p.codigo}',-1)">−</button>
@@ -1536,7 +1576,7 @@ function updateMermaSummary() {
     div.className = 's-day';
     let html = '<div class="s-day-name">' + DAY_SHORT[dow] + ' ' + d.getDate() + '</div>';
     if (!has) { html += '<div class="s-empty">Sin merma</div>'; }
-    else { dia.productos.forEach(p => { if ((mermaData[iso] || {})[p.codigo] > 0) html += '<div class="s-item">× ' + mermaData[iso][p.codigo] + ' ' + p.nombre + '</div>'; }); }
+    else { dia.productos.forEach(p => { if ((mermaData[iso] || {})[p.codigo] > 0) html += '<div class="s-item">× ' + mermaData[iso][p.codigo] + ' ' + escHtml(p.nombre) + '</div>'; }); }
     div.innerHTML = html;
     grid.appendChild(div);
   });
@@ -1556,8 +1596,6 @@ async function submitMerma() {
   // Se envían todos los productos pedidos (el backend descarta los que tengan merma 0)
   const payload = {
     action: 'merma',
-    usuario: sessionUsuario,
-    cliente: sessionCliente,
     sede: SEDE_LABELS[mermaSede],
     dias: mermaDias.map(dia => ({
       fecha: dia.fecha,
@@ -1571,12 +1609,14 @@ async function submitMerma() {
   };
 
   try {
-    await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    await postJson(payload);
     onMermaSuccess();
   } catch (err) {
-    showMermaError('Hubo un error al enviar la merma. Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
-    btn.disabled = false;
-    btn.innerHTML = 'Confirmar merma';
+    if (err.message !== 'NO_AUTH') {
+      showMermaError('No se pudo registrar la merma (' + err.message + '). Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
+      btn.disabled = false;
+      btn.innerHTML = 'Confirmar merma';
+    }
   }
 }
 
@@ -1654,9 +1694,7 @@ async function seleccionarSedeAjuste(sede) {
   document.getElementById('ajuste-sede-title').textContent = SEDE_LABELS[sede];
 
   try {
-    const url = APPS_SCRIPT_URL + '?action=getFeriados&sede=' + encodeURIComponent(SEDE_LABELS[sede]);
-    const res  = await fetch(url);
-    const json = await res.json();
+    const json = await getJson('action=getFeriados&sede=' + encodeURIComponent(SEDE_LABELS[sede]));
     ajusteFeriados = new Set(json.feriados || []);
   } catch (e) {
     ajusteFeriados = new Set();
@@ -1700,12 +1738,9 @@ async function seleccionarSemanaAjuste(lunesIso, etiqueta) {
   hideAjusteError();
 
   try {
-    const url = APPS_SCRIPT_URL + '?action=getPedidoParaAjuste'
-      + '&usuario=' + encodeURIComponent(sessionUsuario)
-      + '&sede='    + encodeURIComponent(SEDE_LABELS[ajusteSede])
-      + '&lunes='   + encodeURIComponent(lunesIso);
-    const res  = await fetch(url);
-    const json = await res.json();
+    const json = await getJson('action=getPedidoParaAjuste'
+      + '&sede='  + encodeURIComponent(SEDE_LABELS[ajusteSede])
+      + '&lunes=' + encodeURIComponent(lunesIso));
     const diasServidor = json.dias || [];
 
     // Armar deliveryDates a partir de los días de entrega de la sede para esta semana
@@ -1905,21 +1940,20 @@ async function submitAjuste() {
 
   const payload = {
     action: 'ajustePedido',
-    usuario: sessionUsuario,
-    cliente: sessionCliente,
     esEdicion: true,
     sede: SEDE_LABELS[ajusteSede],
-    semana: document.getElementById('ajuste-sede-header').textContent,
     dias: dias,
   };
 
   try {
-    await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    await postJson(payload);
     onAjusteSuccess();
   } catch (err) {
-    showAjusteError('Hubo un error al enviar el ajuste. Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
-    btn.disabled = false;
-    btn.innerHTML = 'Confirmar ajuste';
+    if (err.message !== 'NO_AUTH') {
+      showAjusteError('No se pudo registrar el ajuste (' + err.message + '). Intentá nuevamente o escribinos a mariano@somosfeed.com.ar');
+      btn.disabled = false;
+      btn.innerHTML = 'Confirmar ajuste';
+    }
   }
 }
 
@@ -2009,14 +2043,24 @@ function cancelarAjuste() {
 // CERRAR SESIÓN
 // ════════════════════════════════════════════════
 function cerrarSesion() {
+  // Avisar al servidor para invalidar el token (fire & forget).
+  if (sessionToken) {
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'logout', token: sessionToken }),
+    }).catch(() => {});
+  }
   sessionStorage.removeItem('feed_usuario');
   sessionStorage.removeItem('feed_cliente');
   sessionStorage.removeItem('feed_tipo');
   sessionStorage.removeItem('feed_sedes');
+  sessionStorage.removeItem('feed_token');
   sessionUsuario = null;
   sessionCliente = null;
   sessionTipoUsuario = null;
   sessionSedesPermitidas = [];
+  sessionToken = null;
   // Reset de estados por las dudas de que se vuelva a entrar en la misma sesión de navegador
   currentSede = null; orderData = {}; orderOriginal = {}; deliveryDates = []; isEditing = false;
   mermaSede = null; mermaLunes = null; mermaDias = []; mermaData = {};
