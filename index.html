@@ -1538,6 +1538,9 @@ function buildMermaUI() {
       <p style="font-size:0.78rem; color:var(--accent2); font-style:italic; margin-bottom:16px;">
         Los productos de este pedido tienen fecha de vencimiento ${vencimiento.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
       </p>
+      <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">
+        <strong>Una vez cargada la merma de este día no es posible modificar las cantidades ingresadas</strong>
+      </p>
       <table class="ptable">
         <thead><tr><th>Producto</th><th style="text-align:center">Pedido</th><th>Merma</th></tr></thead>
         <tbody>${rows}</tbody>
