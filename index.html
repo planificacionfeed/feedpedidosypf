@@ -1515,11 +1515,20 @@ function buildMermaUI() {
         </td>
       </tr>`).join('');
 
+    const lote = new Date(d); lote.setDate(d.getDate() - 1);
+    const vencimiento = new Date(d); vencimiento.setDate(d.getDate() + 2);
+
     panel.innerHTML = `
       <div class="day-header">
         <h3>${DAY_NAMES[dow]}</h3>
         <span class="date-str">${d.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</span>
       </div>
+      <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">
+        <strong>Lote:</strong> ${lote.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}
+      </p>
+      <p style="font-size:0.78rem; color:var(--accent2); font-style:italic; margin-bottom:16px;">
+        Los productos de este pedido tienen fecha de vencimiento ${vencimiento.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
+      </p>
       <table class="ptable">
         <thead><tr><th>Producto</th><th style="text-align:center">Pedido</th><th>Merma</th></tr></thead>
         <tbody>${rows}</tbody>
