@@ -773,7 +773,8 @@ let mermaSede      = null;
 let mermaLunes     = null; // iso del lunes de la semana elegida
 let mermaDias      = [];   // [{ fecha, productos: [{codigo,nombre,cantidadPedida,merma}] }]
 let mermaData      = {};   // { fecha: { codigo: cantidadMerma } }
-
+let mermaBloqueada = {};   // { fecha: Set(codigos) } — merma ya cargada, no se puede tocar
+  
 // ── ESTADO AJUSTE DE PEDIDO ──
 let ajusteSede       = null;
 let ajusteLunes      = null;
@@ -1486,7 +1487,11 @@ function buildMermaUI() {
     const dow = d.getDay();
 
     mermaData[iso] = {};
-    dia.productos.forEach(p => { mermaData[iso][p.codigo] = p.merma || 0; });
+    mermaBloqueada[iso] = new Set();
+    dia.productos.forEach(p => {
+      mermaData[iso][p.codigo] = p.merma || 0;
+      if ((p.merma || 0) > 0) mermaBloqueada[iso].add(p.codigo);
+    });
 
     const tab = document.createElement('button');
     tab.className = 'day-tab' + (idx === 0 ? ' active' : '');
@@ -1499,21 +1504,25 @@ function buildMermaUI() {
     panel.className = 'day-panel' + (idx === 0 ? ' active' : '');
     panel.id = 'mpanel-' + iso;
 
-    const rows = dia.productos.map(p => `
-      <tr>
-        <td>${escHtml(p.nombre)}</td>
+    const rows = dia.productos.map(p => {
+      const bloqueada = mermaBloqueada[iso].has(p.codigo);
+      return `
+      <tr class="${bloqueada ? 'ajuste-locked' : ''}">
+        <td>${escHtml(p.nombre)}${bloqueada ? '<span class="ajuste-locked-note">🔒 Merma ya cargada</span>' : ''}</td>
         <td class="cant-pedida">${escHtml(p.cantidadPedida)}</td>
         <td>
           <div class="qty-wrap merma-qty">
-            <button class="qty-btn" onclick="changeMermaQty('${iso}','${p.codigo}',-1)">−</button>
+            <button class="qty-btn" onclick="changeMermaQty('${iso}','${p.codigo}',-1)" ${bloqueada ? 'tabindex="-1"' : ''}>−</button>
             <input class="qty-input" type="number" min="0" value="${p.merma || 0}"
               id="mqty-${iso}-${p.codigo}"
+              ${bloqueada ? 'disabled' : ''}
               oninput="setMermaQty('${iso}','${p.codigo}',this.value)"
               onchange="setMermaQty('${iso}','${p.codigo}',this.value)" />
-            <button class="qty-btn" onclick="changeMermaQty('${iso}','${p.codigo}',1)">+</button>
+            <button class="qty-btn" onclick="changeMermaQty('${iso}','${p.codigo}',1)" ${bloqueada ? 'tabindex="-1"' : ''}>+</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     const lote = new Date(d); lote.setDate(d.getDate() - 1);
     const vencimiento = new Date(d); vencimiento.setDate(d.getDate() + 2);
@@ -1524,7 +1533,7 @@ function buildMermaUI() {
         <span class="date-str">${d.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</span>
       </div>
       <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">
-        <strong>Lote:</strong> ${lote.toLocaleDateString('es-AR',{day:'numeric',month:'numeric',year:'numeric'})}
+        <strong>Lote de elaboración:</strong> ${lote.toLocaleDateString('es-AR',{day:'numeric',month:'numeric',year:'numeric'})}
       </p>
       <p style="font-size:0.78rem; color:var(--accent2); font-style:italic; margin-bottom:16px;">
         Los productos de este pedido tienen fecha de vencimiento ${vencimiento.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
@@ -1552,12 +1561,14 @@ function switchMermaDay(iso) {
 // MERMA — CANTIDADES
 // ════════════════════════════════════════════════
 function changeMermaQty(iso, code, delta) {
+  if (mermaBloqueada[iso] && mermaBloqueada[iso].has(code)) return;
   const next = Math.max(0, (mermaData[iso][code] || 0) + delta);
   mermaData[iso][code] = next;
   document.getElementById('mqty-' + iso + '-' + code).value = next;
   refreshMermaDot(iso); updateMermaSummary();
 }
 function setMermaQty(iso, code, val) {
+  if (mermaBloqueada[iso] && mermaBloqueada[iso].has(code)) return;
   const n = Math.max(0, parseInt(val) || 0);
   mermaData[iso][code] = n;
   document.getElementById('mqty-' + iso + '-' + code).value = n;
