@@ -672,7 +672,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzf-FGHGlYO2yWODcFaA4lYXtT3j63zDVCyxSS-A9oLECxVTkx5ODgXA11mGDAgVruzlA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzv9e22jbg9muVkU0moNZ06-aqgUiFM2XMlJFhOsnGqQ0cmiqYdovD6rO4Eyc5p6H2MyA/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00001', name: 'Ensalada Caesar', categoria: 'Ensalada' },
@@ -1698,6 +1698,17 @@ function getCutoffAjusteJS(fechaEntregaIso, categoria, codigo) {
   return null;
 }
 function esAjustableJS(fechaEntregaIso, categoria, codigo) {
+  if (codigo === 'PFPW00270') return false; // este producto nunca se ajusta, ni en modo prueba
+
+  // Usuario de prueba: sin límite de horas, se puede ajustar cualquier
+  // producto hasta la fecha de entrega inclusive.
+  if (sessionUsuario === 'feedpruebas') {
+    const hoy = ahoraAR();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaEntrega = new Date(fechaEntregaIso + 'T00:00:00');
+    return fechaEntrega >= hoy;
+  }
+
   const cutoff = getCutoffAjusteJS(fechaEntregaIso, categoria, codigo);
   if (!cutoff) return false;
   return ahoraAR() < cutoff;
