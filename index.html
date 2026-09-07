@@ -597,9 +597,9 @@
         <span id="merma-sede-header" style="font-family:'Lato',sans-serif; font-weight:900; letter-spacing:-0.5px; font-size:1.05rem;"></span>
       </div>
       <div style="height:18px"></div>
-      <div class="edit-strip visible">
-        <span class="di">ℹ️</span>
-        <span>Se muestran los productos pedidos ese día. Al confirmar, el día completo queda cerrado — no se podrá volver a editar, aunque algún producto quede en 0.</span>
+       <div class="edit-strip visible" style="background:var(--warn-bg); border-color:var(--warn-br); color:#6B4E00; font-weight:700;">
+        <span class="di">⚠️</span>
+        <span> IMPORTANTE: Al confirmar la declaración de merma de este día no será posible editar cantidades. Un desperdicio que queda en 0 será considerado sin desperdicio.</span>
       </div>
       <div id="merma-dia-panel"></div>
     </div>
@@ -609,7 +609,7 @@
       <div class="summary-grid" id="merma-summary-grid"></div>
       <div class="divider"></div>
       <div class="submit-row">
-        <p class="submit-note">Al confirmar, la merma de este día queda registrada de forma definitiva.</p>
+        <p class="submit-note">Al confirmar, la merma de este día queda registrada de forma definitiva y no será posible hacer ediciones.</p>
         <div style="display:flex; gap:12px; flex-wrap:wrap">
           <button class="btn-cancel" onclick="cancelarMerma()">Cancelar y volver al inicio</button>
           <button class="btn-confirm" id="btn-submit-merma" onclick="submitMerma()">Confirmar merma del día</button>
@@ -1540,9 +1540,6 @@ function buildMermaDiaUI() {
     </p>
     <p style="font-size:0.78rem; color:var(--accent2); font-style:italic; margin-bottom:16px;">
       Los productos de este pedido tienen fecha de vencimiento ${vencimiento.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
-    </p>
-    <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">
-      <strong>IMPORTANTE: una vez confirmado este día, no va a ser posible volver a editarlo.</strong>
     </p>
     <table class="ptable">
       <thead><tr><th>Producto</th><th style="text-align:center">Pedido</th><th>Merma</th></tr></thead>
