@@ -672,7 +672,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUcp77PFdlUnGaDMkd_YxZ6DZte7LZwE1reU4n-ZCgY1HEDjcmd6iBqYeqACkt0slrDA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOzr_zqS45k6CncxdPwrJYL96s1mDicn2xcUNRU5ZkPJfHn3IYvmvvl-9UWZ60dYl8TA/exec';
 
 const PRODUCTS = [
   { code: 'PFEN00001', name: 'Ensalada Caesar', categoria: 'Ensalada' },
@@ -693,16 +693,10 @@ const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','S
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
 // ── SESIÓN ──
-// Ya no hay usuarios/hashes hardcodeados: el login se valida contra
-// BigQuery (tabla credenciales_portales) desde el Apps Script.
-// Estos datos vienen en la respuesta del login y se guardan en sessionStorage
-// solo para no tener que loguearse de nuevo en cada recarga de la pestaña.
 let sessionUsuario         = sessionStorage.getItem('feed_usuario') || null;
 let sessionCliente         = sessionStorage.getItem('feed_cliente') || null;
 let sessionTipoUsuario     = sessionStorage.getItem('feed_tipo')    || null;
 let sessionSedesPermitidas = JSON.parse(sessionStorage.getItem('feed_sedes') || '[]');
-// Token de sesión: lo genera el servidor al loguearse y se manda en cada
-// request. El usuario nunca lo ve. Sin token, el servidor rechaza todo.
 let sessionToken           = sessionStorage.getItem('feed_token')   || null;
 
 function getSedesPermitidas() {
@@ -712,8 +706,6 @@ function getSedesPermitidas() {
 // ════════════════════════════════════════════════
 // HELPERS DE RED Y ESCAPE
 // ════════════════════════════════════════════════
-
-// Escapa texto que viene del servidor antes de meterlo en innerHTML.
 function escHtml(s) {
   return String(s === null || s === undefined ? '' : s)
     .replace(/&/g, '&amp;')
@@ -723,13 +715,11 @@ function escHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
-// Sesión vencida o inválida → volver al login.
 function sesionVencida() {
   alert('Tu sesión venció. Volvé a ingresar.');
   cerrarSesion();
 }
 
-// GET con token. Lanza si el servidor rechaza la sesión.
 async function getJson(params) {
   const url = APPS_SCRIPT_URL + '?token=' + encodeURIComponent(sessionToken || '') + '&' + params;
   const res  = await fetch(url);
@@ -738,9 +728,6 @@ async function getJson(params) {
   return json;
 }
 
-// POST con token. Usa text/plain (igual que el login) para evitar el preflight
-// CORS que Apps Script no responde — así se puede LEER la respuesta y saber si
-// realmente se guardó, en lugar de asumir que salió bien.
 async function postJson(payload) {
   payload.token = sessionToken;
   const res = await fetch(APPS_SCRIPT_URL, {
@@ -759,32 +746,30 @@ async function postJson(payload) {
 // ── ESTADO ──
 let currentSede   = null;
 let orderData     = {};
-let orderOriginal = {}; // valores originales al abrir la edición, para mandar solo lo que cambió
+let orderOriginal = {};
 let deliveryDates = [];
 let isEditing     = false;
 
-// Catálogo activo por sede (cargado desde servidor)
 let catalogoActivo = { nordelta: null, madero: null, alcorta: null, ugarte: null };
-// Estado toggles en el admin (antes de guardar)
 let adminToggles = { nordelta: {}, madero: {}, alcorta: {}, ugarte: {} };
 
 // ── ESTADO MERMA ──
 let mermaSede      = null;
-let mermaLunes     = null; // iso del lunes de la semana elegida
-let mermaDias      = [];   // [{ fecha, productos: [{codigo,nombre,cantidadPedida,merma}] }]
-let mermaData      = {};   // { fecha: { codigo: cantidadMerma } }
-let mermaBloqueada = {};   // { fecha: Set(codigos) } — merma ya cargada, no se puede tocar
-  
+let mermaLunes     = null;
+let mermaDias      = [];
+let mermaData      = {};
+let mermaBloqueada = {};   // { fecha: Set(codigos) } — ya cargado en el servidor, inmutable
+
 // ── ESTADO AJUSTE DE PEDIDO ──
 let ajusteSede       = null;
 let ajusteLunes      = null;
-let ajusteDias       = [];   // deliveryDates de la semana elegida (Date[])
-let ajusteData       = {};   // { fecha: { codigo: cantidad } }
-let ajusteOriginal   = {};   // { fecha: { codigo: cantidadOriginal } } — para el diff al enviar
+let ajusteDias       = [];
+let ajusteData       = {};
+let ajusteOriginal   = {};
 let ajusteFeriados   = new Set();
 
 // ════════════════════════════════════════════════
-// LOGIN — valida contra BigQuery (credenciales_portales) vía Apps Script
+// LOGIN
 // ════════════════════════════════════════════════
 async function doLogin() {
   const usuario = document.getElementById('input-usuario').value.trim();
@@ -798,8 +783,6 @@ async function doLogin() {
   btn.innerHTML = '<span class="spinner"></span>Ingresando…';
 
   try {
-    // Content-Type: text/plain evita que el navegador dispare un preflight
-    // CORS que Apps Script no responde bien. El doPost igual parsea el JSON.
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -826,8 +809,6 @@ async function doLogin() {
         showApp();
       }
     } else {
-      // El servidor puede mandar un mensaje propio (ej. bloqueo por
-      // demasiados intentos fallidos).
       errEl.textContent = json.message || 'Usuario o contraseña incorrectos.';
       errEl.style.display = 'block';
     }
@@ -844,9 +825,6 @@ document.addEventListener('DOMContentLoaded', () => {
   ['input-usuario','input-clave'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   });
-  // Continuidad de sesión dentro de la misma pestaña (no revalida contra el
-  // servidor en cada recarga; se cierra sola al cerrar la pestaña/navegador
-  // porque usa sessionStorage).
   if (sessionToken && sessionUsuario && sessionTipoUsuario) {
     if (sessionTipoUsuario === 'admin') showAdmin(); else showApp();
   }
@@ -859,7 +837,6 @@ async function showAdmin() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-screen').style.display = 'flex';
 
-  // Cargar catálogos actuales del servidor para todas las sedes
   await Promise.all(['nordelta','madero', 'alcorta', 'ugarte'].map(async sede => {
     try {
       const json = await getJson('action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]));
@@ -949,12 +926,10 @@ function showApp() {
   document.getElementById('main-app').style.display     = 'flex';
   init();
 
-  // Mostrar solo las sedes permitidas para este usuario
   const permitidas = getSedesPermitidas();
   ['nordelta', 'madero', 'alcorta', 'ugarte'].forEach(s => {
     document.getElementById('card-' + s).style.display = permitidas.includes(s) ? '' : 'none';
   });
-  // Si solo hay una sede visible, usar layout de una columna
   const grid = document.getElementById('sede-grid');
   grid.classList.toggle('single-sede', permitidas.length === 1);
 
@@ -1113,7 +1088,6 @@ function volverASemanaAjuste() {
 let pedidosServidor = { nordelta: null, madero: null, alcorta: null, ugarte: null };
 
 async function cargarEstadoDesdeServidor() {
-  // Solo cargar las sedes a las que el usuario tiene acceso
   const permitidas = getSedesPermitidas();
 
   await Promise.all(permitidas.map(async sede => {
@@ -1156,7 +1130,6 @@ function actualizarBannerYCards() {
     texto.innerHTML = pedidos.length === 1 ? `Ya hay un pedido realizado: ${lineas}` : `Ya hay pedidos realizados: ${lineas}`;
     banner.style.display = 'flex';
   }
-  // Solo actualizar las cards visibles
   permitidas.forEach(s => {
     document.getElementById('card-' + s).classList.toggle('has-pedido', pedidosServidor[s] !== null);
   });
@@ -1183,7 +1156,6 @@ function startOrder(sede) {
   document.getElementById('order-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Devuelve solo los productos activos para la sede actual
 function getActiveProducts() {
   const activos = catalogoActivo[currentSede] || PRODUCTS.map(p => p.code);
   return PRODUCTS.filter(p => activos.includes(p.code));
@@ -1332,8 +1304,6 @@ async function submitOrder() {
   const total = deliveryDates.reduce((sum, d) => sum + Object.values(orderData[isoDate(d)] || {}).reduce((s,q) => s+q, 0), 0);
   if (total === 0) { showError('El pedido está vacío. Ingresá al menos un producto antes de confirmar.'); return; }
 
-  // Armar el payload SOLO con los productos que cambiaron respecto del pedido
-  // original cargado (así el backend no toca filas que no se modificaron).
   const activeProds = getActiveProducts();
   const diasPayload = deliveryDates.map(d => {
     const iso = isoDate(d);
@@ -1362,8 +1332,6 @@ async function submitOrder() {
     timestamp: new Date().toISOString(),
     dias: diasPayload,
   };
-  // usuario, cliente y semana ya no se mandan: el servidor los toma de la
-  // sesión y calcula la semana a partir de las fechas.
 
   try {
     await postJson(payload);
@@ -1490,7 +1458,9 @@ function buildMermaUI() {
     mermaBloqueada[iso] = new Set();
     dia.productos.forEach(p => {
       mermaData[iso][p.codigo] = p.merma || 0;
-      if ((p.merma || 0) > 0) mermaBloqueada[iso].add(p.codigo);
+      // Bloqueado = el servidor ya tiene una fila para este día+código,
+      // sin importar el valor (aunque sea 0). No se infiere del valor.
+      if (p.mermaCargada) mermaBloqueada[iso].add(p.codigo);
     });
 
     const tab = document.createElement('button');
@@ -1611,12 +1581,22 @@ function updateMermaSummary() {
 async function submitMerma() {
   if (mermaDias.length === 0) { showMermaError('No hay productos para cargar merma en esta semana.'); return; }
 
+  // Si absolutamente todo ya está bloqueado, no hay nada nuevo para mandar.
+  const hayAlgoSinCargar = mermaDias.some(dia =>
+    dia.productos.some(p => !(mermaBloqueada[dia.fecha] && mermaBloqueada[dia.fecha].has(p.codigo)))
+  );
+  if (!hayAlgoSinCargar) {
+    showMermaError('Ya se cargó la merma completa de esta semana — no queda nada por confirmar.');
+    return;
+  }
+
   const btn = document.getElementById('btn-submit-merma');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Enviando…';
   hideMermaError();
 
-  // Se envían todos los productos pedidos (el backend descarta los que tengan merma 0)
+  // Se envían todos los productos pedidos (los ya bloqueados, el backend
+  // los ignora igual aunque vengan en el payload).
   const payload = {
     action: 'merma',
     sede: SEDE_LABELS[mermaSede],
@@ -1698,10 +1678,8 @@ function getCutoffAjusteJS(fechaEntregaIso, categoria, codigo) {
   return null;
 }
 function esAjustableJS(fechaEntregaIso, categoria, codigo) {
-  if (codigo === 'PFPW00270') return false; // este producto nunca se ajusta, ni en modo prueba
+  if (codigo === 'PFPW00270') return false;
 
-  // Usuario de prueba: sin límite de horas, se puede ajustar cualquier
-  // producto hasta la fecha de entrega inclusive.
   if (sessionUsuario === 'feedpruebas') {
     const hoy = ahoraAR();
     hoy.setHours(0, 0, 0, 0);
@@ -1738,9 +1716,8 @@ async function seleccionarSedeAjuste(sede) {
   const grid = document.getElementById('ajuste-semana-grid');
   grid.innerHTML = '';
 
-  // Las 2 semanas ajustables son siempre las 2 anteriores a la semana abierta para pedido nuevo
-  const semana2Monday = new Date(window._weekMonday); semana2Monday.setDate(semana2Monday.getDate() - 7);  // "la que viene"
-  const semana1Monday = new Date(window._weekMonday); semana1Monday.setDate(semana1Monday.getDate() - 14); // "en curso"
+  const semana2Monday = new Date(window._weekMonday); semana2Monday.setDate(semana2Monday.getDate() - 7);
+  const semana1Monday = new Date(window._weekMonday); semana1Monday.setDate(semana1Monday.getDate() - 14);
 
   [semana1Monday, semana2Monday].forEach(mon => {
     const dom = new Date(mon); dom.setDate(mon.getDate() + 6);
@@ -1777,7 +1754,6 @@ async function seleccionarSemanaAjuste(lunesIso, etiqueta) {
       + '&lunes=' + encodeURIComponent(lunesIso));
     const diasServidor = json.dias || [];
 
-    // Armar deliveryDates a partir de los días de entrega de la sede para esta semana
     const monday = new Date(lunesIso + 'T00:00:00');
     const allowedDows = SEDE_DAYS[ajusteSede];
     ajusteDias = [];
@@ -1811,7 +1787,6 @@ async function seleccionarSemanaAjuste(lunesIso, etiqueta) {
   document.getElementById('ajuste-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Igual que getActiveProducts() pero para una sede arbitraria (no depende de currentSede)
 function getActiveProductsSede(sede) {
   const activos = catalogoActivo[sede] || PRODUCTS.map(p => p.code);
   return PRODUCTS.filter(p => activos.includes(p.code));
@@ -1897,7 +1872,7 @@ function switchAjusteDay(iso) {
 }
 
 // ════════════════════════════════════════════════
-// AJUSTE — CANTIDADES (solo afecta si es ajustable; los bloqueados están disabled)
+// AJUSTE — CANTIDADES
 // ════════════════════════════════════════════════
 function changeAjusteQty(iso, code, delta) {
   const categoria = getCategoriaPorCodigo(code);
@@ -1924,7 +1899,7 @@ function refreshAjusteDot(iso) {
 }
 
 // ════════════════════════════════════════════════
-// AJUSTE — RESUMEN (solo muestra lo que efectivamente cambió)
+// AJUSTE — RESUMEN
 // ════════════════════════════════════════════════
 function updateAjusteSummary() {
   const grid = document.getElementById('ajuste-summary-grid');
@@ -1959,8 +1934,8 @@ async function submitAjuste() {
     const original = ajusteOriginal[iso] || {};
     const actual    = ajusteData[iso] || {};
     const productos = activeProds
-      .filter(p => esAjustableJS(iso, p.categoria, p.code)) // solo se pueden tocar los ajustables
-      .filter(p => (actual[p.code] || 0) !== (original[p.code] || 0)) // y solo si realmente cambiaron
+      .filter(p => esAjustableJS(iso, p.categoria, p.code))
+      .filter(p => (actual[p.code] || 0) !== (original[p.code] || 0))
       .map(p => ({ codigo: p.code, nombre: p.name, categoria: p.categoria, cantidad: actual[p.code] || 0, cantidadAnterior: original[p.code] || 0 }));
     if (productos.length > 0) dias.push({ fecha: iso, dia: DAY_NAMES[d.getDay()], productos });
   });
@@ -2010,17 +1985,14 @@ function backToHome() {
   document.getElementById('app-container').style.display  = 'block';
   document.getElementById('ajuste-container').style.display = 'none';
 
-  // Reset pedido
   currentSede = null; orderData = {}; orderOriginal = {}; deliveryDates = []; isEditing = false;
   const btn = document.getElementById('btn-submit');
   btn.disabled = false; btn.textContent = 'Confirmar pedido';
 
-  // Reset merma
   mermaSede = null; mermaLunes = null; mermaDias = []; mermaData = {};
   const btnM = document.getElementById('btn-submit-merma');
   btnM.disabled = false; btnM.textContent = 'Confirmar merma';
 
-  // Reset ajuste
   ajusteSede = null; ajusteLunes = null; ajusteDias = []; ajusteData = {}; ajusteOriginal = {};
   const btnA = document.getElementById('btn-submit-ajuste');
   btnA.disabled = false; btnA.textContent = 'Confirmar ajuste';
@@ -2042,7 +2014,7 @@ function showAjusteError(msg) { const el = document.getElementById('ajuste-error
 function hideAjusteError()    { document.getElementById('ajuste-error-msg').style.display = 'none'; }
 
 // ════════════════════════════════════════════════
-// CANCELAR (pedido / merma / ajuste) — vuelve al inicio sin guardar nada
+// CANCELAR
 // ════════════════════════════════════════════════
 function cancelarPedido() {
   currentSede = null; orderData = {}; orderOriginal = {}; deliveryDates = []; isEditing = false;
@@ -2077,7 +2049,6 @@ function cancelarAjuste() {
 // CERRAR SESIÓN
 // ════════════════════════════════════════════════
 function cerrarSesion() {
-  // Avisar al servidor para invalidar el token (fire & forget).
   if (sessionToken) {
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -2095,7 +2066,6 @@ function cerrarSesion() {
   sessionTipoUsuario = null;
   sessionSedesPermitidas = [];
   sessionToken = null;
-  // Reset de estados por las dudas de que se vuelva a entrar en la misma sesión de navegador
   currentSede = null; orderData = {}; orderOriginal = {}; deliveryDates = []; isEditing = false;
   mermaSede = null; mermaLunes = null; mermaDias = []; mermaData = {};
   document.getElementById('main-app').style.display    = 'none';
