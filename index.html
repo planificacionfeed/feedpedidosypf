@@ -96,7 +96,7 @@
     .merma-dia-card .mdc-fecha { font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
     .merma-dia-card .mdc-estado { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 8px; }
     .merma-dia-card.pendiente .mdc-estado { color: var(--warn-br); }
-    .merma-dia-card.cargada { cursor: not-allowed; background: var(--ok-bg); border-color: var(--ok-br); opacity: 0.85; }
+    .merma-dia-card.cargada { background: var(--ok-bg); border-color: var(--ok-br); opacity: 0.85; }
     .merma-dia-card.cargada .mdc-estado { color: var(--ok); }
     .merma-dia-card.cargada:hover { background: var(--ok-bg); border-color: var(--ok-br); }
 
@@ -1445,7 +1445,7 @@ async function cargarCalendarioMerma() {
             <div class="mdc-dia">${DAY_NAMES[fecha.getDay()]}</div>
             <div class="mdc-fecha">${fecha.getDate()} de ${fecha.toLocaleDateString('es-AR',{month:'long'})}</div>
             <div class="mdc-estado">${d.yaCargada ? '✓ Cargada' : 'Pendiente'}</div>`;
-          if (!d.yaCargada) div.onclick = () => seleccionarDiaMerma(d.fecha);
+              div.onclick = () => seleccionarDiaMerma(d.fecha, d.yaCargada);
           fila.appendChild(div);
         });
 
@@ -1457,10 +1457,7 @@ async function cargarCalendarioMerma() {
   }
 }
 
-// ════════════════════════════════════════════════
-// MERMA — CARGAR PRODUCTOS DE UN DÍA PUNTUAL
-// ════════════════════════════════════════════════
-async function seleccionarDiaMerma(fechaIso) {
+async function seleccionarDiaMerma(fechaIso, soloVer) {
   mermaFechaActual = fechaIso;
   mermaData = {};
 
@@ -1468,7 +1465,7 @@ async function seleccionarDiaMerma(fechaIso) {
   document.getElementById('merma-section').style.display = 'block';
   const fechaObj = new Date(fechaIso + 'T00:00:00');
   const etiquetaDia = DAY_NAMES[fechaObj.getDay()] + ' ' + fechaObj.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('merma-sede-header').textContent = SEDE_LABELS[mermaSede] + ' — ' + etiquetaDia;
+  document.getElementById('merma-sede-header').textContent = SEDE_LABELS[mermaSede] + ' — ' + etiquetaDia + (soloVer ? ' (solo lectura)' : '');
   document.getElementById('merma-summary-title').textContent = SEDE_LABELS[mermaSede];
   document.getElementById('merma-dia-panel').innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem">Cargando pedido del día…</p>';
   hideMermaError();
@@ -1479,18 +1476,9 @@ async function seleccionarDiaMerma(fechaIso) {
       + '&fecha=' + encodeURIComponent(fechaIso));
     const dia = json.dia || { fecha: fechaIso, yaCargada: false, productos: [] };
 
-    if (dia.yaCargada) {
-      // Por las dudas de que se haya cargado justo entre que se armó el
-      // calendario y se hizo click (carrera entre dos pestañas, etc.)
-      document.getElementById('merma-dia-panel').innerHTML =
-        '<p style="color:var(--err);font-size:0.85rem">Este día ya fue cargado por otra sesión. Volvé al calendario.</p>';
-      mermaProductos = [];
-      return;
-    }
-
     mermaProductos = dia.productos || [];
     mermaProductos.forEach(p => { mermaData[p.codigo] = p.merma || 0; });
-    buildMermaDiaUI();
+    buildMermaDiaUI(dia.yaCargada);
   } catch (e) {
     document.getElementById('merma-dia-panel').innerHTML = '<p style="color:var(--err);font-size:0.85rem">Error al cargar el pedido de este día.</p>';
   }
@@ -1499,14 +1487,20 @@ async function seleccionarDiaMerma(fechaIso) {
 }
 
 // ════════════════════════════════════════════════
-// MERMA — CONSTRUIR UI DE UN SOLO DÍA (sin day-tabs)
+// MERMA — CONSTRUIR UI DE UN SOLO DÍA (editable o solo lectura)
 // ════════════════════════════════════════════════
-function buildMermaDiaUI() {
+function buildMermaDiaUI(soloVer) {
   const panel = document.getElementById('merma-dia-panel');
+
+  // Mostrar/ocultar el resumen y el botón de confirmar según el modo
+  document.getElementById('merma-summary-grid').style.display = soloVer ? 'none' : '';
+  document.querySelector('.divider').style.display = soloVer ? 'none' : '';
+  document.getElementById('btn-submit-merma').style.display = soloVer ? 'none' : '';
+  document.querySelector('.submit-note').style.display = soloVer ? 'none' : '';
 
   if (mermaProductos.length === 0) {
     panel.innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem">No se encontraron productos pedidos para este día.</p>';
-    updateMermaSummary();
+    if (!soloVer) updateMermaSummary();
     return;
   }
 
@@ -1520,33 +1514,38 @@ function buildMermaDiaUI() {
       <td class="cant-pedida">${escHtml(p.cantidadPedida)}</td>
       <td>
         <div class="qty-wrap merma-qty">
-          <button class="qty-btn" onclick="changeMermaQty('${p.codigo}',-1)">−</button>
+          <button class="qty-btn" onclick="changeMermaQty('${p.codigo}',-1)" ${soloVer ? 'disabled' : ''}>−</button>
           <input class="qty-input" type="number" min="0" value="${p.merma || 0}"
             id="mqty-${p.codigo}"
+            ${soloVer ? 'disabled' : ''}
             oninput="setMermaQty('${p.codigo}',this.value)"
             onchange="setMermaQty('${p.codigo}',this.value)" />
-          <button class="qty-btn" onclick="changeMermaQty('${p.codigo}',1)">+</button>
+          <button class="qty-btn" onclick="changeMermaQty('${p.codigo}',1)" ${soloVer ? 'disabled' : ''}>+</button>
         </div>
       </td>
     </tr>`).join('');
+
+  const avisoSoloLectura = soloVer
+    ? '<div class="edit-strip visible" style="margin-bottom:16px;"><span class="di">✓</span><span>Este día ya fue confirmado — estás viendo la merma cargada, no se puede editar.</span></div>'
+    : `<p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">
+      <strong>Lote de elaboración:</strong> ${lote.toLocaleDateString('es-AR',{day:'numeric',month:'numeric',year:'numeric'})}
+    </p>
+    <p style="font-size:0.78rem; color:var(--accent2); font-style:italic; margin-bottom:16px;">
+      Los productos de este pedido tienen fecha de vencimiento ${vencimiento.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
+    </p>`;
 
   panel.innerHTML = `
     <div class="day-header">
       <h3>${DAY_NAMES[fecha.getDay()]}</h3>
       <span class="date-str">${fecha.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</span>
     </div>
-    <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">
-      <strong>Lote de elaboración:</strong> ${lote.toLocaleDateString('es-AR',{day:'numeric',month:'numeric',year:'numeric'})}
-    </p>
-    <p style="font-size:0.78rem; color:var(--accent2); font-style:italic; margin-bottom:16px;">
-      Los productos de este pedido tienen fecha de vencimiento ${vencimiento.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}.
-    </p>
+    ${avisoSoloLectura}
     <table class="ptable">
       <thead><tr><th>Producto</th><th style="text-align:center">Pedido</th><th>Merma</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 
-  updateMermaSummary();
+  if (!soloVer) updateMermaSummary();
 }
 
 // ════════════════════════════════════════════════
