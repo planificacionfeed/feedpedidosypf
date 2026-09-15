@@ -1108,6 +1108,7 @@ let pedidosServidor = { nordelta: null, madero: null, alcorta: null, ugarte: nul
 
 async function cargarEstadoDesdeServidor() {
   const permitidas = getSedesPermitidas();
+  const sedesConError = [];
 
   await Promise.all(permitidas.map(async sede => {
     try {
@@ -1125,13 +1126,29 @@ async function cargarEstadoDesdeServidor() {
       if (json.status === 'ok' && json.pedido) pedidosServidor[sede] = json.pedido;
       catalogoActivo[sede] = json.catalogo || PRODUCTS.map(p => p.code);
     } catch(e) {
-      catalogoActivo[sede] = PRODUCTS.map(p => p.code);
+      // Si falla la consulta, NO se muestra todo el catálogo sin filtrar
+      // (podría incluir productos que una sede desactivó a propósito, o
+      // productos nuevos que todavía no se activaron). Se prefiere no
+      // mostrar nada y avisar, antes que mostrar algo potencialmente
+      // incorrecto en silencio.
+      catalogoActivo[sede] = [];
+      sedesConError.push(sede);
     }
   }));
 
+  if (sedesConError.length > 0) mostrarErrorCatalogo(sedesConError);
   actualizarBannerYCards();
 }
 
+function mostrarErrorCatalogo(sedes) {
+  const sedeCard = document.getElementById('step-sede');
+  if (document.querySelector('.catalogo-error-banner')) return;
+  const nombres = sedes.map(s => SEDE_LABELS[s]).join(', ');
+  const banner = document.createElement('div');
+  banner.className = 'deadline-passed-banner fade-in catalogo-error-banner';
+  banner.innerHTML = `<span class="dpb-icon">⚠️</span><div><strong>No se pudo cargar el catálogo de: ${escHtml(nombres)}.</strong><br>Recargá la página antes de hacer el pedido — por ahora no se muestra ningún producto de esa sede, para evitar mostrar algo incorrecto.</div>`;
+  sedeCard.parentNode.insertBefore(banner, sedeCard);
+}
 // ════════════════════════════════════════════════
 // BANNER Y CARDS
 // ════════════════════════════════════════════════
