@@ -1124,13 +1124,8 @@ async function cargarEstadoDesdeServidor() {
         + '&fechas=' + encodeURIComponent(fechas.join(','))
       );
       if (json.status === 'ok' && json.pedido) pedidosServidor[sede] = json.pedido;
-      catalogoActivo[sede] = json.catalogo || PRODUCTS.map(p => p.code);
+      catalogoActivo[sede] = json.catalogo || [];
     } catch(e) {
-      // Si falla la consulta, NO se muestra todo el catálogo sin filtrar
-      // (podría incluir productos que una sede desactivó a propósito, o
-      // productos nuevos que todavía no se activaron). Se prefiere no
-      // mostrar nada y avisar, antes que mostrar algo potencialmente
-      // incorrecto en silencio.
       catalogoActivo[sede] = [];
       sedesConError.push(sede);
     }
