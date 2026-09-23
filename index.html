@@ -377,6 +377,10 @@
         <button class="admin-sede-tab" onclick="switchAdminTab('madero')">YPF Madero</button>
         <button class="admin-sede-tab" onclick="switchAdminTab('alcorta')">YPF Alcorta</button>
         <button class="admin-sede-tab" onclick="switchAdminTab('ugarte')">YPF Ugarte</button>
+        <button class="admin-sede-tab" onclick="switchAdminTab('magnolias')">YPF Magnolias</button>
+        <button class="admin-sede-tab" onclick="switchAdminTab('melo')">YPF Melo</button>
+        <button class="admin-sede-tab" onclick="switchAdminTab('oroño')">YPF Oroño</button>
+        <button class="admin-sede-tab" onclick="switchAdminTab('nicaragua')">YPF Nicaragua</button>
       </div>
 
       <!-- Panel Nordelta -->
@@ -426,6 +430,56 @@
           </div>
         </div>
       </div>
+
+      <!-- Panel Magnolias -->
+      <div class="admin-panel" id="admin-panel-magnolias">
+        <div id="product-list-magnolias"></div>
+        <div class="admin-save-row">
+          <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="admin-save-ok" id="save-ok-magnolias">✓ Guardado</span>
+            <button class="btn-admin-save" onclick="guardarCatalogo('magnolias')">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Oroño -->
+      <div class="admin-panel" id="admin-panel-oroño">
+        <div id="product-list-oroño"></div>
+        <div class="admin-save-row">
+          <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="admin-save-ok" id="save-ok-oroño">✓ Guardado</span>
+            <button class="btn-admin-save" onclick="guardarCatalogo('oroño')">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Nicaragua -->
+      <div class="admin-panel" id="admin-panel-nicaragua">
+        <div id="product-list-nicaragua"></div>
+        <div class="admin-save-row">
+          <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="admin-save-ok" id="save-ok-nicaragua">✓ Guardado</span>
+            <button class="btn-admin-save" onclick="guardarCatalogo('nicaragua')">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Melo -->
+      <div class="admin-panel" id="admin-panel-melo">
+        <div id="product-list-melo"></div>
+        <div class="admin-save-row">
+          <p class="admin-save-note">Los cambios se aplican inmediatamente para todos los usuarios que ingresen.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="admin-save-ok" id="save-ok-melo">✓ Guardado</span>
+            <button class="btn-admin-save" onclick="guardarCatalogo('melo')">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      
     </div>
   </div>
 
@@ -540,6 +594,34 @@
       <div class="sede-card" id="card-ugarte" onclick="startOrder('ugarte')">
         <div class="sede-check">✓</div>
         <div class="sede-name">YPF Ugarte</div>
+        <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
+      </div>
+      <div class="sede-card" id="card-magnolias" onclick="startOrder('magnolias')">
+        <div class="sede-check">✓</div>
+        <div class="sede-name">YPF Magnolias</div>
+        <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
+      </div>
+      <div class="sede-card" id="card-oroño" onclick="startOrder('oroño')">
+        <div class="sede-check">✓</div>
+        <div class="sede-name">YPF Oroño</div>
+        <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
+      </div>
+      <div class="sede-card" id="card-nicaragua" onclick="startOrder('nicaragua')">
+        <div class="sede-check">✓</div>
+        <div class="sede-name">YPF Nicaragua</div>
+        <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
+        <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
+        <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
+      </div>
+      <div class="sede-card" id="card-melo" onclick="startOrder('melo')">
+        <div class="sede-check">✓</div>
+        <div class="sede-name">YPF Melo</div>
         <div class="pedido-chip">✓ &nbsp;Pedido realizado</div>
         <div class="sede-cta sede-cta-nuevo">Cargar pedido <span>→</span></div>
         <div class="sede-cta-editar">✎ &nbsp;Editar pedido</div>
@@ -700,7 +782,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrQYIUHiCv5iQVKTNm_lDOajAfT61qW2275tt978wWAtdjwGZAIDaTAAlVGG0gkvrZMw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyhdfk9YyntAQHh8ksYyZPLLxthbLbuNJy4tYvLbst-pH2jd70yEtPI-9rEImWtjwymQ/exec';
 
 // El ÚNICO catálogo que existe es el de la hoja "Catalogo" del Sheets, activado
 // por sede en la tabla de BigQuery catalogo_activo_ypf. Ya no hay ninguna lista
@@ -712,8 +794,8 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrQYIUHiCv5iQV
 //   - Panel Admin (showAdmin): array de strings — solo códigos (ver getCatalogo)
 let productosMaestro = []; // catálogo maestro completo (todos los productos posibles, con categoría) — solo lo usa el panel Admin
 
-const SEDE_DAYS = { nordelta: [1,3,5,0], madero: [1,2,3,4,5], alcorta: [1,3,5,0], ugarte: [1,3,5,0] };
-const SEDE_LABELS = { nordelta: 'YPF Nordelta', madero: 'YPF Madero', alcorta: "YPF Alcorta", ugarte: "YPF Ugarte" };
+const SEDE_DAYS = { nordelta: [1,3,5,0], madero: [1,2,3,4,5], alcorta: [1,3,5,0], ugarte: [1,3,5,0], magnolias: [1,3,5,0], nicaragua: [1,3,5,0], oroño: [1,3,5,0], melo: [1,3,5,0] };
+const SEDE_LABELS = { nordelta: 'YPF Nordelta', madero: 'YPF Madero', alcorta: "YPF Alcorta", magnolias: "YPF Magnolias" , nicaragua: "YPF Nicaragua", oroño: "YPF Oroño", melo: "YPF Melo", ugarte: "YPF Ugarte"};
 
 // Orden en que se agrupan las categorías en cualquier lista de productos
 // (pantalla de pedido, ajuste, panel admin). Categorías que no estén en esta
@@ -753,7 +835,7 @@ let sessionSedesPermitidas = JSON.parse(sessionStorage.getItem('feed_sedes') || 
 let sessionToken           = sessionStorage.getItem('feed_token')   || null;
 
 function getSedesPermitidas() {
-  return sessionSedesPermitidas.length > 0 ? sessionSedesPermitidas : ['nordelta', 'madero', 'alcorta', 'ugarte'];
+  return sessionSedesPermitidas.length > 0 ? sessionSedesPermitidas : ['nordelta', 'madero', 'alcorta', 'ugarte','magnolias','nicaragua','oroño','melo'];
 }
 
 // ════════════════════════════════════════════════
@@ -803,8 +885,8 @@ let orderOriginal = {};
 let deliveryDates = [];
 let isEditing     = false;
 
-let catalogoActivo = { nordelta: null, madero: null, alcorta: null, ugarte: null };
-let adminToggles = { nordelta: {}, madero: {}, alcorta: {}, ugarte: {} };
+let catalogoActivo = { nordelta: null, madero: null, alcorta: null, ugarte: null, magnolias: null, nicaragua: null, oroño: null, melo: null };
+let adminToggles = { nordelta: {}, madero: {}, alcorta: {}, ugarte: {}, magnolias: {}, nicaragua: {}, oroño: {}, melo: {} };
 
 // Catálogo específico de la pantalla de AJUSTE: es la UNIÓN de catálogo
 // activo + lo que ya estaba pedido para la semana elegida (viene armado así
@@ -813,7 +895,7 @@ let adminToggles = { nordelta: {}, madero: {}, alcorta: {}, ugarte: {} };
 // refleja el catálogo activo "puro" (para la pantalla de pedido nuevo), y
 // mezclar ambos haría que un producto ya desactivado por el admin se
 // mostrara también en la pantalla de pedido nuevo, donde no corresponde.
-let catalogoActivoParaAjuste = { nordelta: null, madero: null, alcorta: null, ugarte: null };
+let catalogoActivoParaAjuste = { nordelta: null, madero: null, alcorta: null, ugarte: null, magnolias: null, nicaragua: null, oroño: null, melo: null };
 
 // ── ESTADO MERMA (por día individual) ──
 let mermaSede       = null;
@@ -919,7 +1001,7 @@ async function showAdmin() {
 
   mostrarAvisoAdmin(avisoCatalogo);
 
-  await Promise.all(['nordelta','madero', 'alcorta', 'ugarte'].map(async sede => {
+  await Promise.all(['nordelta','madero', 'alcorta', 'ugarte', 'magnolias', 'nicaragua', 'oroño', 'melo'].map(async sede => {
     try {
       const json = await getJson('action=getCatalogo&sede=' + encodeURIComponent(SEDE_LABELS[sede]));
       catalogoActivo[sede] = json.catalogo || []; // array de códigos (string) — forma admin
@@ -936,6 +1018,10 @@ async function showAdmin() {
   renderAdminPanel('madero');
   renderAdminPanel('alcorta');
   renderAdminPanel('ugarte');
+  renderAdminPanel('magnolias');
+  renderAdminPanel('nicaragua');
+  renderAdminPanel('oroño');
+  renderAdminPanel('melo')
 }
 
 // Muestra (o limpia, si msg es null) un aviso arriba del panel Admin cuando
@@ -1024,7 +1110,7 @@ async function showApp() {
   init();
 
   const permitidas = getSedesPermitidas();
-  ['nordelta', 'madero', 'alcorta', 'ugarte'].forEach(s => {
+  ['nordelta', 'madero', 'alcorta', 'ugarte', 'magnolias', 'nicaragua', 'oroño', 'melo'].forEach(s => {
     document.getElementById('card-' + s).style.display = permitidas.includes(s) ? '' : 'none';
   });
   const grid = document.getElementById('sede-grid');
@@ -1189,7 +1275,7 @@ function volverASemanaAjuste() {
 // ════════════════════════════════════════════════
 // ESTADO DESDE SERVIDOR (pedidos + catálogo activo)
 // ════════════════════════════════════════════════
-let pedidosServidor = { nordelta: null, madero: null, alcorta: null, ugarte: null };
+let pedidosServidor = { nordelta: null, madero: null, alcorta: null, ugarte: null, magnolias: null, nicaragua: null, oroño: null, melo: null  };
 
 async function cargarEstadoDesdeServidor() {
   const permitidas = getSedesPermitidas();
