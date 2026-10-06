@@ -677,7 +677,7 @@
     <div class="card-label">Merma —</div>
     <h2 id="merma-sede-title">—</h2>
     <p style="font-size:0.83rem; color:var(--ink-soft); margin-bottom:20px;">
-      Elegí un día para cargar su merma. Una vez confirmado, ese día queda cerrado y no se puede volver a editar.
+      Elegí un día para cargar la merma de los productos recibidos en esa fecha. Una vez confirmado, ese día queda cerrado y no se puede volver a editar.
     </p>
     <div id="merma-calendario"></div>
   </div>
@@ -1631,11 +1631,14 @@ async function cargarCalendarioMerma() {
         .sort((a, b) => a.fecha.localeCompare(b.fecha))
         .forEach(d => {
           const fecha = new Date(d.fecha + 'T00:00:00');
+          const fechaVenc = new Date(fecha);
+          fechaVenc.setDate(fecha.getDate() + 2);
           const div = document.createElement('div');
           div.className = 'merma-dia-card ' + (d.yaCargada ? 'cargada' : 'pendiente');
           div.innerHTML = `
             <div class="mdc-dia">${DAY_NAMES[fecha.getDay()]}</div>
-            <div class="mdc-fecha">${fecha.getDate()} de ${fecha.toLocaleDateString('es-AR',{month:'long'})}</div>
+            <div class="mdc-fecha"><strong>Fecha de entrega:</strong> ${fecha.getDate()} de ${fecha.toLocaleDateString('es-AR', {month: 'long'})}</div>
+            <div <div class="mdc-vencimiento"><strong>Fecha de vencimiento:</strong> ${fechaVenc.getDate()} de ${fechaVenc.toLocaleDateString('es-AR', {month: 'long'})}</div>
             <div class="mdc-estado">${d.yaCargada ? '✓ Cargada' : 'Pendiente'}</div>`;
               div.onclick = () => seleccionarDiaMerma(d.fecha, d.yaCargada);
           fila.appendChild(div);
