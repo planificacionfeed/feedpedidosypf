@@ -782,7 +782,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYhDJbVbGelR3XXIiCdqu9IaznTf3505pteuohg01K5iKX83EjkLypCNIC8JYp0K585w/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwd3lBuGaf3qHCMOcaauzLyekUU4sODHzzMSpBuPv1rwBUv-_dqF1EC578zaqWZ2gdBTw/exec';
 
 // El ÚNICO catálogo que existe es el de la hoja "Catalogo" del Sheets, activado
 // por sede en la tabla de BigQuery catalogo_activo_ypf. Ya no hay ninguna lista
@@ -1638,7 +1638,6 @@ async function cargarCalendarioMerma() {
           div.innerHTML = `
             <div class="mdc-dia">${DAY_NAMES[fecha.getDay()]}</div>
             <div class="mdc-fecha"><strong>Fecha de entrega:</strong> ${fecha.getDate()} de ${fecha.toLocaleDateString('es-AR', {month: 'long'})}</div>
-            <div class="mdc-vencimiento"><strong>Fecha de vencimiento:</strong> ${fechaVenc.getDate()} de ${fechaVenc.toLocaleDateString('es-AR', {month: 'long'})}</div>
             <div class="mdc-estado">${d.yaCargada ? '✓ Cargada' : 'Pendiente'}</div>`;
               div.onclick = () => seleccionarDiaMerma(d.fecha, d.yaCargada);
           fila.appendChild(div);
