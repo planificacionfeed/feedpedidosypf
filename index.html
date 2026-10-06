@@ -1638,7 +1638,7 @@ async function cargarCalendarioMerma() {
           div.innerHTML = `
             <div class="mdc-dia">${DAY_NAMES[fecha.getDay()]}</div>
             <div class="mdc-fecha"><strong>Fecha de entrega:</strong> ${fecha.getDate()} de ${fecha.toLocaleDateString('es-AR', {month: 'long'})}</div>
-            <div <div class="mdc-vencimiento"><strong>Fecha de vencimiento:</strong> ${fechaVenc.getDate()} de ${fechaVenc.toLocaleDateString('es-AR', {month: 'long'})}</div>
+            <div class="mdc-vencimiento"><strong>Fecha de vencimiento:</strong> ${fechaVenc.getDate()} de ${fechaVenc.toLocaleDateString('es-AR', {month: 'long'})}</div>
             <div class="mdc-estado">${d.yaCargada ? '✓ Cargada' : 'Pendiente'}</div>`;
               div.onclick = () => seleccionarDiaMerma(d.fecha, d.yaCargada);
           fila.appendChild(div);
