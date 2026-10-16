@@ -782,7 +782,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCG26jAHsAvJTXUmr49g1JPX7orxxQVS_ZS5HhK_7v9tZ7qe5sqe7CrUAULiHNans1VA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzf5bCAjxzrhFyVuxBAZ6TUKik9lutlQSEHsqFvcA6XlglYgldkAVQYvP8jC2-R9tVdHw/exec';
 
 // El ÚNICO catálogo que existe es el de la hoja "Catalogo" del Sheets, activado
 // por sede en la tabla de BigQuery catalogo_activo_ypf. Ya no hay ninguna lista
@@ -1900,20 +1900,18 @@ function getCutoffAjusteJS(fechaEntregaIso, categoria, codigo) {
   }
   return null;
 }
-function esAjustableJS(fechaEntregaIso, categoria, codigo) {
-  if (codigo === 'PFPW00270') return false;
 
-  if (sessionUsuario === 'feedpruebas') {
-    const hoy = ahoraAR();
-    hoy.setHours(0, 0, 0, 0);
-    const fechaEntrega = new Date(fechaEntregaIso + 'T00:00:00');
-    return fechaEntrega >= hoy;
-  }
+function esAjustableJS(fechaEntregaIso, categoria, codigo) {
+  // feedpruebas: sin ninguna restricción (ni día/hora, ni categoría, ni producto)
+  if (sessionUsuario === 'feedpruebas') return true;
+
+  if (codigo === 'PFPW00270') return false;
 
   const cutoff = getCutoffAjusteJS(fechaEntregaIso, categoria, codigo);
   if (!cutoff) return false;
   return ahoraAR() < cutoff;
 }
+
 function motivoNoAjustable(codigo, categoria) {
   if (codigo === 'PFPW00270') return 'Este producto no admite ajustes.';
   if (categoria === 'Platos' || categoria === 'Sopa') return 'Venció el plazo (48hs hábiles antes, 10hs).';
