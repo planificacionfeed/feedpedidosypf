@@ -782,7 +782,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVFY-nDniLf7kHJc-Qg7CfARGayUnHBO23MHQ5IXB2JdN0Y6kNcMBDZBkttHAuu-s1cg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCG26jAHsAvJTXUmr49g1JPX7orxxQVS_ZS5HhK_7v9tZ7qe5sqe7CrUAULiHNans1VA/exec';
 
 // El ÚNICO catálogo que existe es el de la hoja "Catalogo" del Sheets, activado
 // por sede en la tabla de BigQuery catalogo_activo_ypf. Ya no hay ninguna lista
@@ -1683,6 +1683,22 @@ async function seleccionarDiaMerma(fechaIso, soloVer) {
 // ════════════════════════════════════════════════
 // MERMA — CONSTRUIR UI DE UN SOLO DÍA (editable o solo lectura)
 // ════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════
+// MERMA — LOTE / VENCIMIENTO (espejo de calcularLoteYVencimientoIso del .gs)
+// Hasta el 18/10/2026 (y SIEMPRE para Madero): lote = entrega - 1, vence entrega + 2 (48hs).
+// Desde el 19/10/2026, sedes que NO son Madero: lote = entrega, vence entrega + 3 (72hs).
+// ════════════════════════════════════════════════
+const FECHA_CORTE_LOTE_72HS = '2026-10-19';
+function calcularLoteYVencimiento(sedeKey, fechaEntregaIso) {
+  const aplicaNueva = sedeKey !== 'madero' && fechaEntregaIso >= FECHA_CORTE_LOTE_72HS;
+  const entrega = new Date(fechaEntregaIso + 'T00:00:00');
+  const lote = new Date(entrega); lote.setDate(entrega.getDate() + (aplicaNueva ? 0 : -1));
+  const vencimiento = new Date(entrega); vencimiento.setDate(entrega.getDate() + (aplicaNueva ? 3 : 2));
+  return { lote, vencimiento };
+}
+
+  
 function buildMermaDiaUI(soloVer) {
   const panel = document.getElementById('merma-dia-panel');
 
@@ -1699,8 +1715,7 @@ function buildMermaDiaUI(soloVer) {
   }
 
   const fecha = new Date(mermaFechaActual + 'T00:00:00');
-  const lote = new Date(fecha); lote.setDate(fecha.getDate() - 1);
-  const vencimiento = new Date(fecha); vencimiento.setDate(fecha.getDate() + 2);
+  const { lote, vencimiento } = calcularLoteYVencimiento(mermaSede, mermaFechaActual);
 
   const rows = mermaProductos.map(p => `
     <tr>
